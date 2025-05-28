@@ -1,4 +1,6 @@
 
+import type { Timestamp } from 'firebase/firestore'; // Import Timestamp
+
 export interface Product {
   id: string;
   name: string;
@@ -22,11 +24,13 @@ export interface CartItem extends Product {
 }
 
 export interface UserProfile {
-  id: string;
-  name: string;
-  email: string;
+  uid: string; // Use uid from Firebase Auth
+  displayName: string | null;
+  email: string | null;
+  photoURL?: string | null;
+  createdAt?: Timestamp; // Use Firestore Timestamp
+  lastLoginAt?: Timestamp; // Use Firestore Timestamp
   addresses?: Address[];
-  // May store mock purchase history here for AI recommendations
   purchaseHistory?: Pick<Product, "id" | "name" | "category">[];
 }
 
@@ -64,3 +68,4 @@ export type SortOption =
   | "name-asc"
   | "name-desc"
   | "latest";
+

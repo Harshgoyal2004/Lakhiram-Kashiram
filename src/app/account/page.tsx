@@ -7,8 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-// MOCK_USER_ID might be used for mock data unrelated to auth
-import type { UserProfile, Order } from '@/lib/types'; // UserProfile here is for MOCK_USER_PROFILE structure
+import type { Order } from '@/lib/types'; // UserProfile here is for MOCK_USER_PROFILE structure
 import { Badge } from '@/components/ui/badge';
 import { Package, MapPin, UserCircle2, LogOut, MailCheck } from 'lucide-react';
 import { auth } from '@/lib/firebase';
@@ -21,10 +20,12 @@ import {
   type User
 } from 'firebase/auth';
 import { useToast } from "@/hooks/use-toast";
+import { upsertUserProfile } from '@/lib/user'; // Import the new function
+import type { UserProfile as AppUserProfile } from '@/lib/types';
 
 
 // Mock user data for addresses and orders, will be replaced by Firestore later
-const MOCK_USER_PROFILE_DETAILS: Pick<UserProfile, "addresses" | "purchaseHistory"> = {
+const MOCK_USER_PROFILE_DETAILS: Pick<AppUserProfile, "addresses" | "purchaseHistory"> = {
   addresses: [
     { id: "addr1", street: "123 Royal Palms", city: "Mumbai", state: "Maharashtra", zip: "400065", country: "India", isDefault: true },
     { id: "addr2", street: "456 Heritage Lane", city: "Delhi", state: "Delhi", zip: "110001", country: "India" },
@@ -36,8 +37,8 @@ const MOCK_USER_PROFILE_DETAILS: Pick<UserProfile, "addresses" | "purchaseHistor
 };
 
 const MOCK_ORDERS: Order[] = [
-  { id: "order1", date: "2024-05-15T10:30:00Z", items: [{ id: '1', name: 'Pure Mustard Oil', description: '', price: 180, imageUrl: '', category: 'Mustard Oil', quantity: 2, size: '1L' }], totalAmount: 360, status: "Delivered", shippingAddress: MOCK_USER_PROFILE_DETAILS.addresses![0] },
-  { id: "order2", date: "2024-06-01T14:00:00Z", items: [{ id: '3', name: 'Extra Virgin Olive Oil', description: '', price: 750, imageUrl: '', category: 'Olive Oil', quantity: 1, size: '750ml' }], totalAmount: 750, status: "Shipped", shippingAddress: MOCK_USER_PROFILE_DETAILS.addresses![0] },
+  { id: "order1", date: "2024-05-15T10:30:00Z", items: [{ id: '1', name: 'Pure Mustard Oil', description: '', price: 180, imageUrl: '', category: 'Mustard Oil', quantity: 2, size: '1L', dataAiHint: "mustard oil" }], totalAmount: 360, status: "Delivered", shippingAddress: MOCK_USER_PROFILE_DETAILS.addresses![0] },
+  { id: "order2", date: "2024-06-01T14:00:00Z", items: [{ id: '3', name: 'Extra Virgin Olive Oil', description: '', price: 750, imageUrl: '', category: 'Olive Oil', quantity: 1, size: '750ml', dataAiHint: "olive oil" }], totalAmount: 750, status: "Shipped", shippingAddress: MOCK_USER_PROFILE_DETAILS.addresses![0] },
 ];
 
 const EMAIL_FOR_SIGN_IN_KEY = 'emailForSignIn';
@@ -59,16 +60,21 @@ export default function AccountPage() {
 
   useEffect(() => {
     // This effect runs only on the client
-    if (isSignInWithEmailLink(auth, window.location.href)) {
+    if (typeof window !== 'undefined' && isSignInWithEmailLink(auth, window.location.href)) {
       setLoading(true); // Indicate processing
       let storedEmail = window.localStorage.getItem(EMAIL_FOR_SIGN_IN_KEY);
       if (!storedEmail) {
+        // Fallback if email not found in localStorage (e.g., different device)
+        // For security, Firebase requires email to be provided if not on same device
+        // Prompting here is a basic fallback. A more robust flow might involve a separate page.
         storedEmail = window.prompt('Please provide your email for confirmation');
       }
+
       if (storedEmail) {
         signInWithEmailLink(auth, storedEmail, window.location.href)
-          .then((result) => {
+          .then(async (result) => { // Make async to await upsertUserProfile
             setCurrentUser(result.user);
+            await upsertUserProfile(result.user); // Save/update user profile in Firestore
             window.localStorage.removeItem(EMAIL_FOR_SIGN_IN_KEY);
             toast({ title: "Successfully signed in!", description: `Welcome ${result.user.email}` });
           })
@@ -86,20 +92,26 @@ export default function AccountPage() {
             }
           });
       } else {
-        toast({ title: "Sign In Error", description: "Email for sign-in not found. Please try sending the link again or ensure you open the link on the same device.", variant: "destructive" });
+        toast({ title: "Sign In Error", description: "Email for sign-in not found. Please try sending the link again or ensure you open the link on the same device, or provide your email when prompted.", variant: "destructive", duration: 10000 });
         setLoading(false);
         if (window.history && window.history.replaceState) {
             window.history.replaceState({}, document.title, window.location.pathname);
         }
       }
+    } else {
+      // If not processing an email link, and not already loading auth state, set loading to false.
+      // This handles the case where onAuthStateChanged might have already run and set user to null.
+      if (loading && !currentUser) {
+        // setLoading(false); // This might be too aggressive if onAuthStateChanged hasn't fired yet
+      }
     }
-  }, [toast]);
+  }, [toast, loading, currentUser]); // Added loading & currentUser to dependency array for safety, though primary trigger is component mount for isSignInWithEmailLink
 
   const handleSendSignInLink = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setLinkSent(false);
-
+    
     const firebaseAuthDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
     if (!firebaseAuthDomain) {
       console.error("Firebase Auth Domain (NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN) is not configured in environment variables.");
@@ -108,14 +120,15 @@ export default function AccountPage() {
       return;
     }
     
-    // DIAGNOSTIC: Use the Firebase auth domain for the continue URL
-    const continueUrl = `https://${firebaseAuthDomain}/account`; 
-    // const originalContinueUrl = `${window.location.origin}${window.location.pathname}`;
-    // console.log("Using DIAGNOSTIC continue URL for email link sign-in:", continueUrl);
-    // console.log("Original continue URL (for when Firebase Console is fixed for localhost):", originalContinueUrl);
+    // Using the actual origin and pathname for the continue URL
+    const originalContinueUrl = `${window.location.origin}${window.location.pathname}`;
+    // const diagnosticContinueUrl = `https://${firebaseAuthDomain}/account`; 
+    
+    console.log("Using continue URL for email link sign-in:", originalContinueUrl);
+    // console.log("DIAGNOSTIC continue URL (if needed):", diagnosticContinueUrl);
     
     const actionCodeSettings = {
-      url: continueUrl, // Using the diagnostic URL
+      url: originalContinueUrl, // Use the original URL
       handleCodeInApp: true,
     };
 
@@ -140,7 +153,7 @@ export default function AccountPage() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      setCurrentUser(null);
+      setCurrentUser(null); // This will trigger re-render to show sign-in form
       toast({ title: "Logged Out", description: "You have been successfully logged out." });
     } catch (error: any) {
       console.error("Logout error:", error);
@@ -149,9 +162,9 @@ export default function AccountPage() {
   };
 
   // Consistent initial loading state for server and client
-  if (loading && !currentUser) {
-    // The `useEffect` for email link processing will set loading to true if it's handling a link.
-    // This block will be rendered by both server and client initially if auth state isn't known yet.
+  // This block will be rendered by both server and client initially if auth state isn't known yet.
+  // The `useEffect` for email link processing will set loading to true if it's handling a link.
+  if (loading && !currentUser && (typeof window === 'undefined' || !isSignInWithEmailLink(auth, window.location.href))) {
     return (
       <div className="container mx-auto px-4 py-12 flex justify-center items-center min-h-[60vh]">
         <p>Loading...</p>
@@ -244,6 +257,7 @@ export default function AccountPage() {
     );
   }
 
+  // If not loading and no current user, show the sign-in form
   return (
     <div className="container mx-auto px-4 py-12 flex justify-center">
       <Card className="w-full max-w-md bg-card shadow-xl">
