@@ -9,17 +9,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MOCK_USER_ID } from '@/lib/constants'; // MOCK_USER_ID might be used for mock data unrelated to auth
 import type { UserProfile, Order } from '@/lib/types'; // UserProfile here is for MOCK_USER_PROFILE structure
-import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Package, MapPin, UserCircle2, LogOut } from 'lucide-react';
+import { Package, MapPin, UserCircle2, LogOut, MailCheck } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
   signOut, 
   onAuthStateChanged,
-  GoogleAuthProvider,
-  signInWithPopup,
+  sendSignInLinkToEmail,
+  isSignInWithEmailLink,
+  signInWithEmailLink,
   type User 
 } from 'firebase/auth';
 import { useToast } from "@/hooks/use-toast";
@@ -42,71 +40,91 @@ const MOCK_ORDERS: Order[] = [
   { id: "order2", date: "2024-06-01T14:00:00Z", items: [{ id: '3', name: 'Extra Virgin Olive Oil', description: '', price: 750, imageUrl: '', category: 'Olive Oil', quantity: 1, size: '750ml' }], totalAmount: 750, status: "Shipped", shippingAddress: MOCK_USER_PROFILE_DETAILS.addresses![0] },
 ];
 
+const EMAIL_FOR_SIGN_IN_KEY = 'emailForSignIn';
 
 export default function AccountPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
-
-  // Form state
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState(''); // For signup form
+  const [linkSent, setLinkSent] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setLoading(false);
     });
-    return () => unsubscribe(); // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, []);
 
-  const handleLogin = async (e: FormEvent) => {
+  useEffect(() => {
+    // Check if the current URL is a sign-in link
+    if (isSignInWithEmailLink(auth, window.location.href)) {
+      setLoading(true);
+      let storedEmail = window.localStorage.getItem(EMAIL_FOR_SIGN_IN_KEY);
+      if (!storedEmail) {
+        // User opened the link on a different device. To prevent session fixation
+        // attacks, ask the user to provide the email again. For simplicity,
+        // we'll use a prompt here. In a real app, you'd use a UI element.
+        storedEmail = window.prompt('Please provide your email for confirmation');
+      }
+      if (storedEmail) {
+        signInWithEmailLink(auth, storedEmail, window.location.href)
+          .then((result) => {
+            setCurrentUser(result.user);
+            window.localStorage.removeItem(EMAIL_FOR_SIGN_IN_KEY);
+            toast({ title: "Successfully signed in!", description: `Welcome ${result.user.email}` });
+            // You can access the new user via result.user
+            // Additional user info profile not available via Sensei unless custom claims are set
+          })
+          .catch((error) => {
+            console.error("Error signing in with email link:", error);
+            toast({ title: "Sign In Failed", description: error.message, variant: "destructive" });
+          })
+          .finally(() => {
+            setLoading(false);
+             // Clean the URL to remove the sign-in link query parameters
+            if (window.history && window.history.replaceState) {
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+          });
+      } else {
+        toast({ title: "Sign In Error", description: "Email for sign-in not found. Please try sending the link again.", variant: "destructive" });
+        setLoading(false);
+      }
+    }
+  }, [toast]);
+
+  const handleSendSignInLink = async (e: FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setLinkSent(false);
+
+    const actionCodeSettings = {
+      // URL you want to redirect back to. The domain (www.example.com) for this
+      // URL must be whitelisted in the Firebase Console.
+      url: window.location.href, // Redirect to the current page
+      handleCodeInApp: true, // This must be true.
+    };
+
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      toast({ title: "Logged In", description: "Welcome back!" });
-      setEmail('');
-      setPassword('');
+      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+      window.localStorage.setItem(EMAIL_FOR_SIGN_IN_KEY, email);
+      setLinkSent(true);
+      toast({ 
+        title: "Sign-in Link Sent", 
+        description: "Please check your email for the sign-in link.",
+        duration: 10000 // Keep message longer
+      });
+      setEmail(''); // Clear email field
     } catch (error: any) {
-      console.error("Login error:", error);
-      toast({ title: "Login Failed", description: error.message, variant: "destructive" });
+      console.error("Error sending sign-in link:", error);
+      toast({ title: "Failed to Send Link", description: error.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   };
   
-  const handleSignup = async (e: FormEvent) => {
-    e.preventDefault();
-    try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      // Note: To set the displayName, you'd typically call updateProfile on the user object from the result.
-      // For now, Firebase might pick up the name from Google Sign-In if that's how the account was first created.
-      toast({ title: "Signup Successful", description: "Your account has been created." });
-      setEmail('');
-      setPassword('');
-      setName('');
-    } catch (error: any) {
-      console.error("Signup error:", error);
-      toast({ title: "Signup Failed", description: error.message, variant: "destructive" });
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-      toast({ title: "Signed In with Google", description: "Welcome!" });
-    } catch (error: any) {
-      console.error("Google Sign-in error object:", error); // Log the full error object
-      let errorMessage = "An unexpected error occurred during Google Sign-In.";
-      if (error.code) {
-        errorMessage = `Error (${error.code}): ${error.message}`;
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      toast({ title: "Google Sign-in Failed", description: errorMessage, variant: "destructive" });
-    }
-  };
-
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -117,7 +135,7 @@ export default function AccountPage() {
     }
   };
 
-  if (loading) {
+  if (loading && !currentUser) { // Show loading only if not already signed in from link
     return (
       <div className="container mx-auto px-4 py-12 flex justify-center items-center min-h-[60vh]">
         <p>Loading account information...</p> 
@@ -209,91 +227,47 @@ export default function AccountPage() {
     );
   }
 
-  // If not logged in, show Login/Signup forms
+  // If not logged in, show Email Link form
   return (
     <div className="container mx-auto px-4 py-12 flex justify-center">
-      <Tabs defaultValue="login" className="w-full max-w-md">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="login">Login</TabsTrigger>
-          <TabsTrigger value="signup">Sign Up</TabsTrigger>
-        </TabsList>
-        <TabsContent value="login">
-          <Card className="bg-card shadow-xl">
-            <CardHeader>
-              <CardTitle className="text-3xl font-serif text-brand-sienna">Welcome Back</CardTitle>
-              <CardDescription>Login to access your account and continue your royal shopping experience.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleLogin} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
-                  <Input id="login-email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="login-password">Password</Label>
-                  <Input id="login-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-                </div>
-                <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-lg py-3">Login</Button>
-              </form>
-              <div className="mt-6 relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">
-                    Or continue with
-                  </span>
-                </div>
-              </div>
-              <Button variant="outline" onClick={handleGoogleSignIn} className="w-full mt-6">
-                <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path></svg>
-                Sign in with Google
+      <Card className="w-full max-w-md bg-card shadow-xl">
+        <CardHeader>
+          <CardTitle className="text-3xl font-serif text-brand-sienna">Sign In / Create Account</CardTitle>
+          <CardDescription>
+            {linkSent 
+              ? "A sign-in link has been sent to your email. Please check your inbox (and spam folder) and click the link to sign in."
+              : "Enter your email to receive a secure sign-in link. No password needed!"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {linkSent ? (
+            <div className="text-center py-4">
+              <MailCheck className="h-16 w-16 text-green-500 mx-auto mb-4" />
+              <p className="text-lg font-medium">Link Sent!</p>
+              <Button variant="link" onClick={() => { setLinkSent(false); setEmail(''); }} className="mt-4">
+                Send to a different email or try again
               </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="signup">
-          <Card className="bg-card shadow-xl">
-            <CardHeader>
-              <CardTitle className="text-3xl font-serif text-brand-sienna">Create an Account</CardTitle>
-              <CardDescription>Join and unlock a world of premium oils and personalized offers.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSignup} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-name">Full Name (Optional)</Label>
-                  <Input id="signup-name" type="text" placeholder="Your Name" value={name} onChange={(e) => setName(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input id="signup-email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input id="signup-password" type="password" placeholder="Must be at least 6 characters" value={password} onChange={(e) => setPassword(e.target.value)} required />
-                </div>
-                <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-lg py-3">Create Account</Button>
-              </form>
-              <div className="mt-6 relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">
-                    Or continue with
-                  </span>
-                </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSendSignInLink} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="email-link-email">Email</Label>
+                <Input 
+                  id="email-link-email" 
+                  type="email" 
+                  placeholder="you@example.com" 
+                  value={email} 
+                  onChange={(e) => setEmail(e.target.value)} 
+                  required 
+                />
               </div>
-              <Button variant="outline" onClick={handleGoogleSignIn} className="w-full mt-6">
-                 <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path></svg>
-                Sign in with Google
+              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-lg py-3" disabled={loading}>
+                {loading ? "Sending..." : "Send Sign-In Link"}
               </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </form>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
-
-    
