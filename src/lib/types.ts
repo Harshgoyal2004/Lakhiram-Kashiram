@@ -10,10 +10,11 @@ export interface Product {
   dietaryTags?: string[]; // e.g., "Organic", "Cold-Pressed", "Refined"
   origin?: string; // e.g., "India", "Spain"
   size?: string; // e.g., "1L", "500ml"
-  stock?: number; 
+  stock?: number;
   attributes?: { key: string; value: string }[]; // e.g. {key: "Extraction", value: "Cold-Pressed"}
   sku?: string;
   dataAiHint?: string; // For placeholder images
+  isFeatured?: boolean; // For featured products
 }
 
 export interface CartItem extends Product {
@@ -57,10 +58,9 @@ export interface Filters {
   // Add other filter criteria as needed
 }
 
-export type SortOption = 
-  | "price-asc" 
-  | "price-desc" 
-  | "name-asc" 
-  | "name-desc" 
+export type SortOption =
+  | "price-asc"
+  | "price-desc"
+  | "name-asc"
+  | "name-desc"
   | "latest";
-
