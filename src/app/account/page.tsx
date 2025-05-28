@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MOCK_USER_ID } from '@/lib/constants'; // MOCK_USER_ID might be used for mock data unrelated to auth
+// MOCK_USER_ID might be used for mock data unrelated to auth
 import type { UserProfile, Order } from '@/lib/types'; // UserProfile here is for MOCK_USER_PROFILE structure
 import { Badge } from '@/components/ui/badge';
 import { Package, MapPin, UserCircle2, LogOut, MailCheck } from 'lucide-react';
@@ -58,12 +58,11 @@ export default function AccountPage() {
   }, []);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && isSignInWithEmailLink(auth, window.location.href)) {
-      setLoading(true);
+    // This effect runs only on the client
+    if (isSignInWithEmailLink(auth, window.location.href)) {
+      setLoading(true); // Indicate processing
       let storedEmail = window.localStorage.getItem(EMAIL_FOR_SIGN_IN_KEY);
       if (!storedEmail) {
-        // User opened the link on a different device. To prevent session fixation
-        // attacks, ask the user to provide the associated email again.
         storedEmail = window.prompt('Please provide your email for confirmation');
       }
       if (storedEmail) {
@@ -72,18 +71,16 @@ export default function AccountPage() {
             setCurrentUser(result.user);
             window.localStorage.removeItem(EMAIL_FOR_SIGN_IN_KEY);
             toast({ title: "Successfully signed in!", description: `Welcome ${result.user.email}` });
-            // Clean the URL by removing the sign-in link query parameters
-            if (window.history && window.history.replaceState) {
-                window.history.replaceState({}, document.title, window.location.pathname);
-            }
           })
           .catch((error) => {
             console.error("Error signing in with email link:", error);
-            toast({ title: "Sign In Failed", description: `Code: ${error.code}, Message: ${error.message}`, variant: "destructive" });
+            const errorCode = (error as any).code;
+            const errorMessage = (error as any).message;
+            toast({ title: "Sign In Failed", description: `Code: ${errorCode}, Message: ${errorMessage}`, variant: "destructive" });
           })
           .finally(() => {
             setLoading(false);
-             // Clean the URL by removing the sign-in link query parameters even if there was an error
+            // Clean the URL by removing the sign-in link query parameters
             if (window.history && window.history.replaceState) {
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
@@ -91,44 +88,34 @@ export default function AccountPage() {
       } else {
         toast({ title: "Sign In Error", description: "Email for sign-in not found. Please try sending the link again or ensure you open the link on the same device.", variant: "destructive" });
         setLoading(false);
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
       }
     }
-  }, [toast]); // Added toast to dependency array
+  }, [toast]);
 
   const handleSendSignInLink = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setLinkSent(false);
 
-    // --- DIAGNOSTIC CODE ---
-    // Construct the URL to redirect back to.
-    // This must be whitelisted in the Firebase Console for email link sign-in.
     const firebaseAuthDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
-
     if (!firebaseAuthDomain) {
       console.error("Firebase Auth Domain (NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN) is not configured in environment variables.");
       toast({ title: "Configuration Error", description: "Firebase Auth Domain is missing. Please check your .env.local file.", variant: "destructive" });
       setLoading(false);
       return;
     }
-
-    // FOR DIAGNOSTIC PURPOSES ONLY: Using a Firebase hosted domain.
-    // The user will be redirected to this domain after clicking the email link.
-    // For the actual flow on localhost, 'localhost' (or 'localhost:your_port')
-    // MUST be authorized in the Firebase Console for Email Link Sign-In continue URIs.
-    const continueUrl = `https://${firebaseAuthDomain}/account`;
-    const originalContinueUrl = `${window.location.origin}${window.location.pathname}`;
-
-    console.log("Using DIAGNOSTIC continue URL for email link sign-in:", continueUrl);
-    console.log("Original continue URL (for when Firebase Console is fixed for localhost):", originalContinueUrl);
-    // --- END DIAGNOSTIC CODE ---
-
-
-    // const continueUrl = `${window.location.origin}${window.location.pathname}`; // Original code
-    // console.log("Using continue URL for email link sign-in:", continueUrl);
-
+    
+    // DIAGNOSTIC: Use the Firebase auth domain for the continue URL
+    const continueUrl = `https://${firebaseAuthDomain}/account`; 
+    // const originalContinueUrl = `${window.location.origin}${window.location.pathname}`;
+    // console.log("Using DIAGNOSTIC continue URL for email link sign-in:", continueUrl);
+    // console.log("Original continue URL (for when Firebase Console is fixed for localhost):", originalContinueUrl);
+    
     const actionCodeSettings = {
-      url: continueUrl, // Using the diagnostic URL. Change back to originalContinueUrl or window.location.origin + window.location.pathname after fixing Firebase console.
+      url: continueUrl, // Using the diagnostic URL
       handleCodeInApp: true,
     };
 
@@ -153,7 +140,7 @@ export default function AccountPage() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      setCurrentUser(null); // Explicitly set currentUser to null
+      setCurrentUser(null);
       toast({ title: "Logged Out", description: "You have been successfully logged out." });
     } catch (error: any) {
       console.error("Logout error:", error);
@@ -161,10 +148,13 @@ export default function AccountPage() {
     }
   };
 
-  if (loading && !currentUser && typeof window !== 'undefined' && !isSignInWithEmailLink(auth, window.location.href)) {
+  // Consistent initial loading state for server and client
+  if (loading && !currentUser) {
+    // The `useEffect` for email link processing will set loading to true if it's handling a link.
+    // This block will be rendered by both server and client initially if auth state isn't known yet.
     return (
       <div className="container mx-auto px-4 py-12 flex justify-center items-center min-h-[60vh]">
-        <p>Loading account information...</p>
+        <p>Loading...</p>
       </div>
     );
   }
@@ -297,3 +287,4 @@ export default function AccountPage() {
     </div>
   );
 }
+
