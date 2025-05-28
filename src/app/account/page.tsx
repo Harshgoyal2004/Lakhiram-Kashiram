@@ -44,10 +44,10 @@ const EMAIL_FOR_SIGN_IN_KEY = 'emailForSignIn';
 
 export default function AccountPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(true); // Renamed from 'loading' to be more specific
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [email, setEmail] = useState('');
   const [linkSent, setLinkSent] = useState(false);
-  const [isProcessingLink, setIsProcessingLink] = useState(false); // For link sending button
+  const [isProcessingLink, setIsProcessingLink] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -59,13 +59,10 @@ export default function AccountPage() {
   }, []);
 
   useEffect(() => {
-    // This effect handles the actual sign-in when the user clicks the link in their email
-    // and is redirected back to this page.
     if (typeof window !== 'undefined' && isSignInWithEmailLink(auth, window.location.href)) {
       setIsLoadingUser(true);
       let storedEmail = window.localStorage.getItem(EMAIL_FOR_SIGN_IN_KEY);
       if (!storedEmail) {
-        // If email is not in localStorage, prompt the user for it for security.
         storedEmail = window.prompt('Please provide your email for confirmation');
       }
 
@@ -76,7 +73,6 @@ export default function AccountPage() {
             await upsertUserProfile(result.user);
             window.localStorage.removeItem(EMAIL_FOR_SIGN_IN_KEY);
             toast({ title: "Successfully signed in!", description: `Welcome ${result.user.email || result.user.displayName}` });
-            // Clean the URL
             if (window.history && window.history.replaceState) {
               window.history.replaceState({}, document.title, window.location.pathname);
             }
@@ -86,7 +82,6 @@ export default function AccountPage() {
             const errorCode = (error as any).code;
             const errorMessage = (error as any).message;
             toast({ title: "Sign In Failed", description: `Code: ${errorCode}, Message: ${errorMessage}`, variant: "destructive" });
-            // Clean the URL
             if (window.history && window.history.replaceState) {
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
@@ -101,13 +96,8 @@ export default function AccountPage() {
             window.history.replaceState({}, document.title, window.location.pathname);
         }
       }
-    } else {
-      // If not handling an email link, just ensure loading state is false if user state is determined.
-      if (isLoadingUser && !currentUser) {
-        // Handled by onAuthStateChanged
-      }
     }
-  }, [toast, isLoadingUser, currentUser]); // Removed specific dependencies like auth to avoid re-triggering unnecessarily
+  }, [toast, isLoadingUser, currentUser]);
 
   const handleSendSignInLink = async (e: FormEvent) => {
     e.preventDefault();
@@ -121,14 +111,13 @@ export default function AccountPage() {
       return;
     }
     
-    // Diagnostic log for authDomain from Firebase SDK's perspective
     if (auth.config && auth.config.authDomain) {
         console.log('[AccountPage] Firebase Auth Domain from config:', auth.config.authDomain);
     } else {
         console.warn('[AccountPage] Firebase auth.config.authDomain is not available.');
     }
 
-    const continueUrl = window.location.href; // Use the full current URL
+    const continueUrl = window.location.href; 
     console.log("[AccountPage] Using continue URL for email link sign-in:", continueUrl);
 
     const actionCodeSettings = {
@@ -150,7 +139,16 @@ export default function AccountPage() {
       console.error("Error sending sign-in link:", error);
       const errorCode = error.code;
       const errorMessage = error.message;
-      toast({ title: "Failed to Send Link", description: `Code: ${errorCode}, Message: ${errorMessage}. Check console for details. Ensure ${new URL(continueUrl).hostname} is authorized for email link continuation in Firebase console.`, variant: "destructive", duration: 15000 });
+      let detailedDescription = `Code: ${errorCode}, Message: ${errorMessage}.`;
+
+      if (errorCode === 'auth/unauthorized-continue-uri') {
+        detailedDescription = `Error: The domain '${new URL(continueUrl).hostname}' (likely 'localhost' for development) is not authorized for email link redirects. 
+        Please go to your Firebase Console > Authentication > Sign-in method > Email/Password provider (edit) > Email link (passwordless sign-in) section. 
+        Ensure '${new URL(continueUrl).hostname}' is added to the 'Authorized domains' list there.`;
+      } else {
+        detailedDescription += " Check your browser console for more details.";
+      }
+      toast({ title: "Failed to Send Link", description: detailedDescription, variant: "destructive", duration: 20000 });
     } finally {
       setIsProcessingLink(false);
     }
