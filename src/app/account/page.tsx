@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { MOCK_USER_ID } from '@/lib/constants'; // MOCK_USER_ID might be used for mock data unrelated to auth
 import type { UserProfile, Order } from '@/lib/types'; // UserProfile here is for MOCK_USER_PROFILE structure
 import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge'; // Added missing import
+import { Badge } from '@/components/ui/badge';
 import { Package, MapPin, UserCircle2, LogOut } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { 
@@ -18,6 +18,8 @@ import {
   signInWithEmailAndPassword, 
   signOut, 
   onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
   type User 
 } from 'firebase/auth';
 import { useToast } from "@/hooks/use-toast";
@@ -75,14 +77,7 @@ export default function AccountPage() {
   const handleSignup = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      // Note: Firebase createUserWithEmailAndPassword doesn't set displayName by default.
-      // To set displayName, you'd use updateProfile after user creation.
-      // For now, we're just creating the user with email/password.
       await createUserWithEmailAndPassword(auth, email, password);
-      // Optionally update profile here if name is collected and important at signup
-      // if (auth.currentUser && name) {
-      //   await updateProfile(auth.currentUser, { displayName: name });
-      // }
       toast({ title: "Signup Successful", description: "Your account has been created." });
       setEmail('');
       setPassword('');
@@ -90,6 +85,17 @@ export default function AccountPage() {
     } catch (error: any) {
       console.error("Signup error:", error);
       toast({ title: "Signup Failed", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+      toast({ title: "Signed In with Google", description: "Welcome!" });
+    } catch (error: any) {
+      console.error("Google Sign-in error:", error);
+      toast({ title: "Google Sign-in Failed", description: error.message, variant: "destructive" });
     }
   };
 
@@ -106,7 +112,7 @@ export default function AccountPage() {
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-12 flex justify-center items-center min-h-[60vh]">
-        <p>Loading account information...</p> {/* Replace with a proper loader if desired */}
+        <p>Loading account information...</p> 
       </div>
     );
   }
@@ -221,6 +227,20 @@ export default function AccountPage() {
                 </div>
                 <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-lg py-3">Login</Button>
               </form>
+              <div className="mt-6 relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">
+                    Or continue with
+                  </span>
+                </div>
+              </div>
+              <Button variant="outline" onClick={handleGoogleSignIn} className="w-full mt-6">
+                <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path></svg>
+                Sign in with Google
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -246,6 +266,20 @@ export default function AccountPage() {
                 </div>
                 <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-lg py-3">Create Account</Button>
               </form>
+              <div className="mt-6 relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">
+                    Or continue with
+                  </span>
+                </div>
+              </div>
+              <Button variant="outline" onClick={handleGoogleSignIn} className="w-full mt-6">
+                 <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path></svg>
+                Sign in with Google
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
