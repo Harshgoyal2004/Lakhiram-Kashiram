@@ -2,6 +2,7 @@
 export const NAV_LINKS = [
   { href: '/', label: 'Home' },
   { href: '/about', label: 'About Us' },
+  { href: '/products', label: 'Products' }, // Added Products link
   // { href: '/services', label: 'Services' }, // Example for a future informational page
   // { href: '/gallery', label: 'Gallery' }, // Example for a future informational page
   { href: '/faq', label: 'FAQ' },
