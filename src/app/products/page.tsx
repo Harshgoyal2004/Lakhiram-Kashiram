@@ -2,7 +2,7 @@
 // src/app/products/page.tsx
 "use client"; // This page involves client-side filtering and state
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import type { Product, Filters, SortOption } from '@/lib/types';
 import { getProducts as fetchProductsFromDb } from '@/lib/products'; // Renamed to avoid conflict
 import ProductList from '@/components/products/ProductList';
@@ -11,6 +11,7 @@ import ProductSort from '@/components/products/ProductSort';
 import { PRODUCT_CATEGORIES, DIETARY_TAGS } from '@/lib/constants';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
+import Link from 'next/link';
 
 export default function ProductsPage() {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
@@ -23,6 +24,11 @@ export default function ProductsPage() {
     searchQuery: '',
   });
   const [sortOption, setSortOption] = useState<SortOption>('latest');
+
+  const [searchSuggestions, setSearchSuggestions] = useState<Product[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -92,9 +98,6 @@ export default function ProductsPage() {
         break;
       case 'latest': 
       default:
-        // Assuming Firestore might return them in a particular order or use IDs
-        // For client-side sorting 'latest', we might need a 'dateAdded' field or similar
-        // For now, just use ID or keep original order from DB.
         currentProducts.sort((a,b) => (a.id && b.id) ? a.id.localeCompare(b.id) : 0);
         break;
     }
@@ -103,8 +106,39 @@ export default function ProductsPage() {
   }, [filters, sortOption, allProducts]);
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setFilters(prev => ({ ...prev, searchQuery: event.target.value }));
+    const query = event.target.value;
+    setFilters(prev => ({ ...prev, searchQuery: query }));
+
+    if (query.length > 1) { // Show suggestions if query is more than 1 character
+      const suggestions = allProducts
+        .filter(product => product.name.toLowerCase().includes(query.toLowerCase()))
+        .slice(0, 5); // Limit to 5 suggestions
+      setSearchSuggestions(suggestions);
+      setShowSuggestions(true);
+    } else {
+      setSearchSuggestions([]);
+      setShowSuggestions(false);
+    }
   };
+
+  const handleSuggestionClick = (productName: string) => {
+    setFilters(prev => ({ ...prev, searchQuery: productName }));
+    setSearchSuggestions([]);
+    setShowSuggestions(false);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
 
   if (isLoading && allProducts.length === 0) {
     return (
@@ -137,15 +171,31 @@ export default function ProductsPage() {
       </div>
 
       <div className="mb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <div className="relative w-full sm:max-w-xs">
+        <div className="relative w-full sm:max-w-xs" ref={searchContainerRef}>
           <Input
             type="search"
             placeholder="Search oils..."
             value={filters.searchQuery}
             onChange={handleSearchChange}
+            onFocus={() => filters.searchQuery && searchSuggestions.length > 0 && setShowSuggestions(true)}
             className="pl-10"
           />
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+          {showSuggestions && searchSuggestions.length > 0 && (
+            <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-md shadow-lg max-h-60 overflow-y-auto">
+              <ul>
+                {searchSuggestions.map(product => (
+                  <li
+                    key={product.id}
+                    className="px-4 py-2 hover:bg-accent hover:text-accent-foreground cursor-pointer text-sm"
+                    onClick={() => handleSuggestionClick(product.name)}
+                  >
+                    {product.name}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
         <ProductSort currentSort={sortOption} onSortChange={setSortOption} />
       </div>
@@ -168,3 +218,4 @@ export default function ProductsPage() {
     </div>
   );
 }
+
