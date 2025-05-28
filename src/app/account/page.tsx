@@ -78,6 +78,8 @@ export default function AccountPage() {
     e.preventDefault();
     try {
       await createUserWithEmailAndPassword(auth, email, password);
+      // Note: To set the displayName, you'd typically call updateProfile on the user object from the result.
+      // For now, Firebase might pick up the name from Google Sign-In if that's how the account was first created.
       toast({ title: "Signup Successful", description: "Your account has been created." });
       setEmail('');
       setPassword('');
@@ -94,8 +96,14 @@ export default function AccountPage() {
       await signInWithPopup(auth, provider);
       toast({ title: "Signed In with Google", description: "Welcome!" });
     } catch (error: any) {
-      console.error("Google Sign-in error:", error);
-      toast({ title: "Google Sign-in Failed", description: error.message, variant: "destructive" });
+      console.error("Google Sign-in error object:", error); // Log the full error object
+      let errorMessage = "An unexpected error occurred during Google Sign-In.";
+      if (error.code) {
+        errorMessage = `Error (${error.code}): ${error.message}`;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      toast({ title: "Google Sign-in Failed", description: errorMessage, variant: "destructive" });
     }
   };
 
