@@ -40,12 +40,32 @@ export async function getOrdersByUserId(userId: string): Promise<Order[]> {
   }
   try {
     const ordersRef = collection(db, 'orders');
+    // Ensure you have an index in Firestore for this query: orders collection, userId field (ascending/descending), createdAt field (descending)
     const q = query(ordersRef, where('userId', '==', userId), orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
-    const orders = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
+    const orders = querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        // Ensure createdAt is converted from Firestore Timestamp to Date if needed,
+        // or handle as Timestamp. For client-side rendering, toDate() is often useful.
+        createdAt: (data.createdAt as Timestamp)?.toDate ? (data.createdAt as Timestamp).toDate() : new Date(data.createdAt),
+      } as Order;
+    });
     return orders;
   } catch (error) {
     console.error("Error fetching orders for user:", userId, error);
+    // It's good practice to check Firestore console for missing index errors here.
+    if ((error as any).code === 'failed-precondition') {
+        console.error(
+          `Firestore Precondition Failed: This often means you're missing an index. 
+          Please create a composite index in Firestore for the 'orders' collection with:
+          - 'userId' (Ascending or Descending)
+          - 'createdAt' (Descending)`
+        );
+      }
     return [];
   }
 }
+
