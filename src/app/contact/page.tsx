@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, Phone, Mail } from 'lucide-react';
+import { MapPin, Phone, Mail, Navigation } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 
 export default function ContactPage() {
@@ -21,6 +21,9 @@ export default function ContactPage() {
     });
     (event.target as HTMLFormElement).reset();
   };
+
+  const address = "510, Lahori Gate, Khari Baoli, New Delhi, India - 110006";
+  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -72,8 +75,15 @@ export default function ContactPage() {
             <MapPin className="h-8 w-8 text-brand-gold mt-1 flex-shrink-0" />
             <div>
               <h3 className="text-xl font-semibold text-foreground">Our Address</h3>
-              <p className="text-muted-foreground">510, Lahori Gate, Khari Baoli, New Delhi, India - 110006</p>
-              {/* <a href="#" className="text-sm text-primary hover:underline mt-1 inline-block">Get Directions</a> */}
+              <p className="text-muted-foreground">{address}</p>
+              <a 
+                href={googleMapsUrl} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-sm text-primary hover:underline mt-2 inline-flex items-center"
+              >
+                <Navigation className="mr-1 h-4 w-4" /> Get Directions
+              </a>
             </div>
           </div>
           <div className="flex items-start space-x-4 p-4 bg-muted/30 rounded-lg">
