@@ -39,7 +39,8 @@ export default function ContactPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to send message.');
+        console.error("Contact form submission failed. Status:", response.status, "Result:", result);
+        throw new Error(result.error || result.details || `Failed to send message. Status: ${response.status}`);
       }
 
       toast({
@@ -48,9 +49,10 @@ export default function ContactPage() {
       });
       (event.target as HTMLFormElement).reset();
     } catch (error: any) {
+      console.error("Error submitting contact form client-side:", error);
       toast({
         title: "Error Sending Message",
-        description: error.message || "An unexpected error occurred. Please try again.",
+        description: error.message || "An unexpected error occurred. Please try again or check the console.",
         variant: "destructive",
       });
     } finally {

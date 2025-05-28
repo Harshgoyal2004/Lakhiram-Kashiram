@@ -32,9 +32,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: 'Message submitted successfully!', submissionId: docRef.id }, { status: 201 });
 
   } catch (error) {
-    console.error('Error submitting contact form:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-    return NextResponse.json({ error: 'Failed to submit message.', details: errorMessage }, { status: 500 });
+    console.error('Error in /api/submit-contact-form:', error); // Log the full error object on the server
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred while processing the submission.';
+    return NextResponse.json({ error: 'Failed to submit message on server.', details: errorMessage }, { status: 500 });
   }
 }
 
