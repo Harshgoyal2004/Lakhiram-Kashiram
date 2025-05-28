@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -71,16 +72,15 @@ export default function ContactPage() {
             <MapPin className="h-8 w-8 text-brand-gold mt-1 flex-shrink-0" />
             <div>
               <h3 className="text-xl font-semibold text-foreground">Our Address</h3>
-              <p className="text-muted-foreground">123 Oil Market Road, Heritage City, ST 12345, India</p>
-              <a href="#" className="text-sm text-primary hover:underline mt-1 inline-block">Get Directions</a>
+              <p className="text-muted-foreground">510, Lahori Gate, Khari Baoli, New Delhi, India - 110006</p>
+              {/* <a href="#" className="text-sm text-primary hover:underline mt-1 inline-block">Get Directions</a> */}
             </div>
           </div>
           <div className="flex items-start space-x-4 p-4 bg-muted/30 rounded-lg">
             <Phone className="h-8 w-8 text-brand-gold mt-1 flex-shrink-0" />
             <div>
               <h3 className="text-xl font-semibold text-foreground">Phone</h3>
-              <p className="text-muted-foreground">+91 123 456 7890 (Customer Service)</p>
-              <p className="text-muted-foreground">+91 098 765 4321 (Business Inquiries)</p>
+              <p className="text-muted-foreground">+91 9810176808</p>
             </div>
           </div>
           <div className="flex items-start space-x-4 p-4 bg-muted/30 rounded-lg">
@@ -88,10 +88,10 @@ export default function ContactPage() {
             <div>
               <h3 className="text-xl font-semibold text-foreground">Email</h3>
               <p className="text-muted-foreground">
-                <a href="mailto:info@lakhiramkashiram.com" className="hover:text-primary">info@lakhiramkashiram.com</a>
+                <a href="mailto:goyalvishal77@gmail.com" className="hover:text-primary">goyalvishal77@gmail.com</a>
               </p>
               <p className="text-muted-foreground">
-                <a href="mailto:sales@lakhiramkashiram.com" className="hover:text-primary">sales@lakhiramkashiram.com</a>
+                <a href="mailto:lakhiramkashiram@gmail.com" className="hover:text-primary">lakhiramkashiram@gmail.com</a>
               </p>
             </div>
           </div>
