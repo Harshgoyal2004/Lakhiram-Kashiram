@@ -1,7 +1,8 @@
+
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { SITE_NAME, COMPANY_TAGLINE, COMPANY_FOUNDING_YEAR } from '@/lib/constants';
+import { SITE_NAME, COMPANY_FOUNDING_YEAR } from '@/lib/constants';
 
 export default function AboutTeaser() {
   return (
@@ -11,26 +12,26 @@ export default function AboutTeaser() {
           <div>
             <Image 
               src="https://placehold.co/800x600.png" 
-              alt="Lakhi Ram Kashi Ram historical image or depiction of quality oils"
+              alt="Image representing the company's heritage or operations"
               width={800}
               height={600}
               className="rounded-lg shadow-xl object-cover"
-              data-ai-hint="vintage oil factory"
+              data-ai-hint="company team meeting"
             />
           </div>
           <div className="text-center md:text-left">
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-brand-sienna mb-6">
-              A Century of Trust, <span className="text-brand-gold">A Legacy of Purity</span>
+              Our Legacy, <span className="text-brand-gold">Your Trust</span>
             </h2>
             <p className="text-lg text-muted-foreground mb-4">
-              Since {COMPANY_FOUNDING_YEAR}, {SITE_NAME} has been synonymous with the finest quality cooking oils. We blend age-old traditions with modern expertise to bring you products that are not just healthy, but also rich in authentic flavor and aroma.
+              Since {COMPANY_FOUNDING_YEAR}, {SITE_NAME} has built a reputation on integrity, quality, and unwavering commitment to our clients. We are leaders in the oil industry, dedicated to innovation and sustainable practices.
             </p>
             <p className="text-lg text-muted-foreground mb-8">
-              Discover the story behind our commitment to excellence and the values that have guided us for generations.
+              Discover the journey, values, and people that define our company and drive our success.
             </p>
             <Link href="/about" passHref>
               <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors">
-                Learn More About Us
+                Read Our Story
               </Button>
             </Link>
           </div>

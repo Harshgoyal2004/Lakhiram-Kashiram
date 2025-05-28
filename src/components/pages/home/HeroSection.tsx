@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -8,12 +9,12 @@ export default function HeroSection() {
     <section className="relative bg-gradient-to-r from-brand-antique-white via-amber-50 to-brand-antique-white py-20 md:py-32 rounded-lg shadow-xl overflow-hidden">
       <div className="absolute inset-0 opacity-20">
         <Image 
-          src="https://placehold.co/1920x1080.png" // Replace with a fitting background image
-          alt="Abstract background representing oil quality"
+          src="https://placehold.co/1920x1080.png"
+          alt="Abstract background representing company values or industry"
           layout="fill"
           objectFit="cover"
           quality={75}
-          data-ai-hint="oil texture background"
+          data-ai-hint="corporate office building"
         />
       </div>
       <div className="container mx-auto px-4 relative z-10 text-center">
@@ -24,11 +25,11 @@ export default function HeroSection() {
           {COMPANY_TAGLINE}
         </p>
         <p className="text-lg md:text-xl text-brand-gold font-semibold mb-10">
-          Trusted Quality Since {COMPANY_FOUNDING_YEAR}
+          A Tradition of Excellence Since {COMPANY_FOUNDING_YEAR}
         </p>
-        <Link href="/products" passHref>
+        <Link href="/about" passHref>
           <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground px-10 py-6 text-lg transition-transform hover:scale-105">
-            Explore Our Oils
+            Learn More About Us
           </Button>
         </Link>
       </div>

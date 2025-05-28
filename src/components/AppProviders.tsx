@@ -1,7 +1,9 @@
+
 "use client";
 
 import type React from 'react';
-import { CartProvider } from '@/context/CartContext';
+// CartProvider is removed as it's an e-commerce feature.
+// Other global providers could be added here if needed in the future.
 
 interface AppProvidersProps {
   children: React.ReactNode;
@@ -9,8 +11,8 @@ interface AppProvidersProps {
 
 export default function AppProviders({ children }: AppProvidersProps) {
   return (
-    <CartProvider>
+    <>
       {children}
-    </CartProvider>
+    </>
   );
 }
