@@ -58,14 +58,10 @@ export default function AccountPage() {
   }, []);
 
   useEffect(() => {
-    // Check if the current URL is a sign-in link
-    if (isSignInWithEmailLink(auth, window.location.href)) {
+    if (typeof window !== 'undefined' && isSignInWithEmailLink(auth, window.location.href)) {
       setLoading(true);
       let storedEmail = window.localStorage.getItem(EMAIL_FOR_SIGN_IN_KEY);
       if (!storedEmail) {
-        // User opened the link on a different device. To prevent session fixation
-        // attacks, ask the user to provide the email again. For simplicity,
-        // we'll use a prompt here. In a real app, you'd use a UI element.
         storedEmail = window.prompt('Please provide your email for confirmation');
       }
       if (storedEmail) {
@@ -74,16 +70,16 @@ export default function AccountPage() {
             setCurrentUser(result.user);
             window.localStorage.removeItem(EMAIL_FOR_SIGN_IN_KEY);
             toast({ title: "Successfully signed in!", description: `Welcome ${result.user.email}` });
-            // You can access the new user via result.user
-            // Additional user info profile not available via Sensei unless custom claims are set
+            if (window.history && window.history.replaceState) {
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
           })
           .catch((error) => {
             console.error("Error signing in with email link:", error);
-            toast({ title: "Sign In Failed", description: error.message, variant: "destructive" });
+            toast({ title: "Sign In Failed", description: `Code: ${error.code}, Message: ${error.message}`, variant: "destructive" });
           })
           .finally(() => {
             setLoading(false);
-             // Clean the URL to remove the sign-in link query parameters
             if (window.history && window.history.replaceState) {
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
@@ -100,11 +96,14 @@ export default function AccountPage() {
     setLoading(true);
     setLinkSent(false);
 
+    // Construct the URL to redirect back to.
+    // This must be whitelisted in the Firebase Console for email link sign-in.
+    const continueUrl = `${window.location.origin}${window.location.pathname}`;
+    console.log("Using continue URL for email link sign-in:", continueUrl); // For debugging
+
     const actionCodeSettings = {
-      // URL you want to redirect back to. The domain (www.example.com) for this
-      // URL must be whitelisted in the Firebase Console.
-      url: window.location.href, // Redirect to the current page
-      handleCodeInApp: true, // This must be true.
+      url: continueUrl, 
+      handleCodeInApp: true,
     };
 
     try {
@@ -114,12 +113,12 @@ export default function AccountPage() {
       toast({ 
         title: "Sign-in Link Sent", 
         description: "Please check your email for the sign-in link.",
-        duration: 10000 // Keep message longer
+        duration: 10000 
       });
-      setEmail(''); // Clear email field
+      setEmail('');
     } catch (error: any) {
       console.error("Error sending sign-in link:", error);
-      toast({ title: "Failed to Send Link", description: error.message, variant: "destructive" });
+      toast({ title: "Failed to Send Link", description: `Code: ${error.code}, Message: ${error.message}`, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -135,7 +134,7 @@ export default function AccountPage() {
     }
   };
 
-  if (loading && !currentUser) { // Show loading only if not already signed in from link
+  if (loading && !currentUser) {
     return (
       <div className="container mx-auto px-4 py-12 flex justify-center items-center min-h-[60vh]">
         <p>Loading account information...</p> 
@@ -227,7 +226,6 @@ export default function AccountPage() {
     );
   }
 
-  // If not logged in, show Email Link form
   return (
     <div className="container mx-auto px-4 py-12 flex justify-center">
       <Card className="w-full max-w-md bg-card shadow-xl">
