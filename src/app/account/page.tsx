@@ -12,13 +12,13 @@ import type { UserProfile, Order } from '@/lib/types'; // UserProfile here is fo
 import { Badge } from '@/components/ui/badge';
 import { Package, MapPin, UserCircle2, LogOut, MailCheck } from 'lucide-react';
 import { auth } from '@/lib/firebase';
-import { 
-  signOut, 
+import {
+  signOut,
   onAuthStateChanged,
   sendSignInLinkToEmail,
   isSignInWithEmailLink,
   signInWithEmailLink,
-  type User 
+  type User
 } from 'firebase/auth';
 import { useToast } from "@/hooks/use-toast";
 
@@ -62,6 +62,8 @@ export default function AccountPage() {
       setLoading(true);
       let storedEmail = window.localStorage.getItem(EMAIL_FOR_SIGN_IN_KEY);
       if (!storedEmail) {
+        // User opened the link on a different device. To prevent session fixation
+        // attacks, ask the user to provide the associated email again.
         storedEmail = window.prompt('Please provide your email for confirmation');
       }
       if (storedEmail) {
@@ -70,6 +72,7 @@ export default function AccountPage() {
             setCurrentUser(result.user);
             window.localStorage.removeItem(EMAIL_FOR_SIGN_IN_KEY);
             toast({ title: "Successfully signed in!", description: `Welcome ${result.user.email}` });
+            // Clean the URL by removing the sign-in link query parameters
             if (window.history && window.history.replaceState) {
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
@@ -80,29 +83,52 @@ export default function AccountPage() {
           })
           .finally(() => {
             setLoading(false);
+             // Clean the URL by removing the sign-in link query parameters even if there was an error
             if (window.history && window.history.replaceState) {
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
           });
       } else {
-        toast({ title: "Sign In Error", description: "Email for sign-in not found. Please try sending the link again.", variant: "destructive" });
+        toast({ title: "Sign In Error", description: "Email for sign-in not found. Please try sending the link again or ensure you open the link on the same device.", variant: "destructive" });
         setLoading(false);
       }
     }
-  }, [toast]);
+  }, [toast]); // Added toast to dependency array
 
   const handleSendSignInLink = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setLinkSent(false);
 
+    // --- DIAGNOSTIC CODE ---
     // Construct the URL to redirect back to.
     // This must be whitelisted in the Firebase Console for email link sign-in.
-    const continueUrl = `${window.location.origin}${window.location.pathname}`;
-    console.log("Using continue URL for email link sign-in:", continueUrl); // For debugging
+    const firebaseAuthDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
+
+    if (!firebaseAuthDomain) {
+      console.error("Firebase Auth Domain (NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN) is not configured in environment variables.");
+      toast({ title: "Configuration Error", description: "Firebase Auth Domain is missing. Please check your .env.local file.", variant: "destructive" });
+      setLoading(false);
+      return;
+    }
+
+    // FOR DIAGNOSTIC PURPOSES ONLY: Using a Firebase hosted domain.
+    // The user will be redirected to this domain after clicking the email link.
+    // For the actual flow on localhost, 'localhost' (or 'localhost:your_port')
+    // MUST be authorized in the Firebase Console for Email Link Sign-In continue URIs.
+    const continueUrl = `https://${firebaseAuthDomain}/account`;
+    const originalContinueUrl = `${window.location.origin}${window.location.pathname}`;
+
+    console.log("Using DIAGNOSTIC continue URL for email link sign-in:", continueUrl);
+    console.log("Original continue URL (for when Firebase Console is fixed for localhost):", originalContinueUrl);
+    // --- END DIAGNOSTIC CODE ---
+
+
+    // const continueUrl = `${window.location.origin}${window.location.pathname}`; // Original code
+    // console.log("Using continue URL for email link sign-in:", continueUrl);
 
     const actionCodeSettings = {
-      url: continueUrl, 
+      url: continueUrl, // Using the diagnostic URL. Change back to originalContinueUrl or window.location.origin + window.location.pathname after fixing Firebase console.
       handleCodeInApp: true,
     };
 
@@ -110,10 +136,10 @@ export default function AccountPage() {
       await sendSignInLinkToEmail(auth, email, actionCodeSettings);
       window.localStorage.setItem(EMAIL_FOR_SIGN_IN_KEY, email);
       setLinkSent(true);
-      toast({ 
-        title: "Sign-in Link Sent", 
+      toast({
+        title: "Sign-in Link Sent",
         description: "Please check your email for the sign-in link.",
-        duration: 10000 
+        duration: 10000
       });
       setEmail('');
     } catch (error: any) {
@@ -123,10 +149,11 @@ export default function AccountPage() {
       setLoading(false);
     }
   };
-  
+
   const handleLogout = async () => {
     try {
       await signOut(auth);
+      setCurrentUser(null); // Explicitly set currentUser to null
       toast({ title: "Logged Out", description: "You have been successfully logged out." });
     } catch (error: any) {
       console.error("Logout error:", error);
@@ -134,13 +161,14 @@ export default function AccountPage() {
     }
   };
 
-  if (loading && !currentUser) {
+  if (loading && !currentUser && typeof window !== 'undefined' && !isSignInWithEmailLink(auth, window.location.href)) {
     return (
       <div className="container mx-auto px-4 py-12 flex justify-center items-center min-h-[60vh]">
-        <p>Loading account information...</p> 
+        <p>Loading account information...</p>
       </div>
     );
   }
+
 
   if (currentUser) {
     return (
@@ -232,7 +260,7 @@ export default function AccountPage() {
         <CardHeader>
           <CardTitle className="text-3xl font-serif text-brand-sienna">Sign In / Create Account</CardTitle>
           <CardDescription>
-            {linkSent 
+            {linkSent
               ? "A sign-in link has been sent to your email. Please check your inbox (and spam folder) and click the link to sign in."
               : "Enter your email to receive a secure sign-in link. No password needed!"}
           </CardDescription>
@@ -250,13 +278,13 @@ export default function AccountPage() {
             <form onSubmit={handleSendSignInLink} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="email-link-email">Email</Label>
-                <Input 
-                  id="email-link-email" 
-                  type="email" 
-                  placeholder="you@example.com" 
-                  value={email} 
-                  onChange={(e) => setEmail(e.target.value)} 
-                  required 
+                <Input
+                  id="email-link-email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
                 />
               </div>
               <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-lg py-3" disabled={loading}>
