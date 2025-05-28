@@ -7,9 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { Order } from '@/lib/types'; 
+import type { Order } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
-import { Package, MapPin, UserCircle2, LogOut, MailCheck } from 'lucide-react';
+import { Package, MapPin, UserCircle2, LogOut, MailCheck, Loader2 } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import {
   signOut,
@@ -20,7 +20,7 @@ import {
   type User
 } from 'firebase/auth';
 import { useToast } from "@/hooks/use-toast";
-import { upsertUserProfile } from '@/lib/user';
+import { upsertUserProfile } from '@/lib/user'; // Ensure this path is correct
 import type { UserProfile as AppUserProfile } from '@/lib/types';
 
 
@@ -44,85 +44,95 @@ const EMAIL_FOR_SIGN_IN_KEY = 'emailForSignIn';
 
 export default function AccountPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoadingUser, setIsLoadingUser] = useState(true); // Renamed from 'loading' to be more specific
   const [email, setEmail] = useState('');
   const [linkSent, setLinkSent] = useState(false);
+  const [isProcessingLink, setIsProcessingLink] = useState(false); // For link sending button
   const { toast } = useToast();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
-      setLoading(false);
+      setIsLoadingUser(false);
     });
     return () => unsubscribe();
   }, []);
 
   useEffect(() => {
+    // This effect handles the actual sign-in when the user clicks the link in their email
+    // and is redirected back to this page.
     if (typeof window !== 'undefined' && isSignInWithEmailLink(auth, window.location.href)) {
-      setLoading(true); 
+      setIsLoadingUser(true);
       let storedEmail = window.localStorage.getItem(EMAIL_FOR_SIGN_IN_KEY);
       if (!storedEmail) {
+        // If email is not in localStorage, prompt the user for it for security.
         storedEmail = window.prompt('Please provide your email for confirmation');
       }
 
       if (storedEmail) {
         signInWithEmailLink(auth, storedEmail, window.location.href)
-          .then(async (result) => { 
+          .then(async (result) => {
             setCurrentUser(result.user);
-            await upsertUserProfile(result.user); 
+            await upsertUserProfile(result.user);
             window.localStorage.removeItem(EMAIL_FOR_SIGN_IN_KEY);
-            toast({ title: "Successfully signed in!", description: `Welcome ${result.user.email}` });
+            toast({ title: "Successfully signed in!", description: `Welcome ${result.user.email || result.user.displayName}` });
+            // Clean the URL
+            if (window.history && window.history.replaceState) {
+              window.history.replaceState({}, document.title, window.location.pathname);
+            }
           })
           .catch((error) => {
             console.error("Error signing in with email link:", error);
             const errorCode = (error as any).code;
             const errorMessage = (error as any).message;
             toast({ title: "Sign In Failed", description: `Code: ${errorCode}, Message: ${errorMessage}`, variant: "destructive" });
-          })
-          .finally(() => {
-            setLoading(false);
+            // Clean the URL
             if (window.history && window.history.replaceState) {
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
+          })
+          .finally(() => {
+            setIsLoadingUser(false);
           });
       } else {
         toast({ title: "Sign In Error", description: "Email for sign-in not found. Please try sending the link again or ensure you open the link on the same device, or provide your email when prompted.", variant: "destructive", duration: 10000 });
-        setLoading(false);
+        setIsLoadingUser(false);
         if (window.history && window.history.replaceState) {
             window.history.replaceState({}, document.title, window.location.pathname);
         }
       }
     } else {
-      if (loading && !currentUser) {
-        // setLoading(false); // Handled by onAuthStateChanged
+      // If not handling an email link, just ensure loading state is false if user state is determined.
+      if (isLoadingUser && !currentUser) {
+        // Handled by onAuthStateChanged
       }
     }
-  }, [toast, loading, currentUser]);
+  }, [toast, isLoadingUser, currentUser]); // Removed specific dependencies like auth to avoid re-triggering unnecessarily
 
   const handleSendSignInLink = async (e: FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setIsProcessingLink(true);
     setLinkSent(false);
-    
-    const firebaseAuthDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
-    if (!firebaseAuthDomain) {
+
+    if (!process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN) {
       console.error("Firebase Auth Domain (NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN) is not configured in environment variables.");
       toast({ title: "Configuration Error", description: "Firebase Auth Domain is missing. Please check your .env.local file.", variant: "destructive" });
-      setLoading(false);
+      setIsProcessingLink(false);
       return;
     }
     
-    const currentOrigin = window.location.origin;
-    const currentPathname = window.location.pathname;
-    console.log("[AccountPage] Current window.location.origin:", currentOrigin);
-    console.log("[AccountPage] Current window.location.pathname:", currentPathname);
+    // Diagnostic log for authDomain from Firebase SDK's perspective
+    if (auth.config && auth.config.authDomain) {
+        console.log('[AccountPage] Firebase Auth Domain from config:', auth.config.authDomain);
+    } else {
+        console.warn('[AccountPage] Firebase auth.config.authDomain is not available.');
+    }
 
-    const originalContinueUrl = `${currentOrigin}${currentPathname}`;
-    
-    console.log("[AccountPage] Using continue URL for email link sign-in:", originalContinueUrl);
-    
+    const continueUrl = window.location.href; // Use the full current URL
+    console.log("[AccountPage] Using continue URL for email link sign-in:", continueUrl);
+
     const actionCodeSettings = {
-      url: originalContinueUrl,
+      url: continueUrl,
       handleCodeInApp: true,
     };
 
@@ -140,16 +150,16 @@ export default function AccountPage() {
       console.error("Error sending sign-in link:", error);
       const errorCode = error.code;
       const errorMessage = error.message;
-      toast({ title: "Failed to Send Link", description: `Code: ${errorCode}, Message: ${errorMessage}`, variant: "destructive" });
+      toast({ title: "Failed to Send Link", description: `Code: ${errorCode}, Message: ${errorMessage}. Check console for details. Ensure ${new URL(continueUrl).hostname} is authorized for email link continuation in Firebase console.`, variant: "destructive", duration: 15000 });
     } finally {
-      setLoading(false);
+      setIsProcessingLink(false);
     }
   };
 
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      setCurrentUser(null); 
+      setCurrentUser(null);
       toast({ title: "Logged Out", description: "You have been successfully logged out." });
     } catch (error: any) {
       console.error("Logout error:", error);
@@ -157,10 +167,11 @@ export default function AccountPage() {
     }
   };
 
-  if (loading && !currentUser && (typeof window === 'undefined' || !isSignInWithEmailLink(auth, window.location.href))) {
+  if (isLoadingUser) {
     return (
       <div className="container mx-auto px-4 py-12 flex justify-center items-center min-h-[60vh]">
-        <p>Loading...</p>
+        <Loader2 className="h-12 w-12 text-brand-gold animate-spin" />
+        <p className="ml-4 text-lg">Loading account information...</p>
       </div>
     );
   }
@@ -283,8 +294,8 @@ export default function AccountPage() {
                   required
                 />
               </div>
-              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-lg py-3" disabled={loading}>
-                {loading ? "Sending..." : "Send Sign-In Link"}
+              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-lg py-3" disabled={isProcessingLink}>
+                {isProcessingLink ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Send Sign-In Link"}
               </Button>
             </form>
           )}
@@ -293,3 +304,4 @@ export default function AccountPage() {
     </div>
   );
 }
+
