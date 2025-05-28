@@ -27,13 +27,19 @@ export async function generateMetadata(
     };
   }
 
+  const openGraphImages = [];
+  if (product.imageUrl && product.imageUrl.startsWith('https://')) {
+    openGraphImages.push(product.imageUrl);
+  }
+
+
   return {
     title: `${product.name} - ${SITE_NAME}`,
     description: product.description,
     openGraph: {
       title: `${product.name} - ${SITE_NAME}`,
       description: product.description,
-      images: product.imageUrl ? [product.imageUrl] : [],
+      images: openGraphImages,
     },
   };
 }
@@ -52,6 +58,13 @@ export default async function ProductDetailPage({ params }: Props) {
     notFound();
   }
 
+  const placeholderImage = "https://placehold.co/800x800.png";
+  const imageUrl = product.imageUrl || placeholderImage;
+
+  if (product.imageUrl && !product.imageUrl.startsWith('https://firebasestorage.googleapis.com/') && !product.imageUrl.startsWith('https://placehold.co/')) {
+    console.warn(`[ProductDetailPage] Product "${product.name}" (ID: ${product.id}) has an unusual imageUrl: ${product.imageUrl}. Ensure it's a valid Firebase Storage download URL or a placeholder.`);
+  }
+
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="mb-8">
@@ -65,13 +78,16 @@ export default async function ProductDetailPage({ params }: Props) {
       <div className="grid md:grid-cols-2 gap-12 items-start">
         <div className="relative aspect-square rounded-lg overflow-hidden shadow-xl">
           <Image
-            src={product.imageUrl || "https://placehold.co/800x800.png"}
+            src={imageUrl}
             alt={product.name || "Product image"}
             fill
             sizes="(max-width: 768px) 100vw, 50vw"
             className="object-cover"
             data-ai-hint={product.dataAiHint || "oil product detail"}
             priority // Prioritize loading main product image
+            onError={(e) => {
+              console.error(`[ProductDetailPage] Error loading image for product "${product.name}": ${imageUrl}`, e);
+            }}
           />
         </div>
 

@@ -14,17 +14,30 @@ interface ProductCardProps {
 export default function ProductCard({ product }: ProductCardProps) {
   if (!product) return null;
 
+  const placeholderImage = "https://placehold.co/600x400.png";
+  const imageUrl = product.imageUrl || placeholderImage;
+
+  if (product.imageUrl && !product.imageUrl.startsWith('https://firebasestorage.googleapis.com/') && !product.imageUrl.startsWith('https://placehold.co/')) {
+    console.warn(`[ProductCard] Product "${product.name}" (ID: ${product.id}) has an unusual imageUrl: ${product.imageUrl}. Ensure it's a valid Firebase Storage download URL or a placeholder.`);
+  }
+
   return (
     <Card className="flex flex-col h-full overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg">
       <CardHeader className="p-0">
         <div className="relative aspect-[4/3] w-full">
           <Image
-            src={product.imageUrl || "https://placehold.co/600x400.png"}
+            src={imageUrl}
             alt={product.name || "Product image"}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             className="object-cover"
             data-ai-hint={product.dataAiHint || "oil product"}
+            onError={(e) => {
+              console.error(`[ProductCard] Error loading image for product "${product.name}": ${imageUrl}`, e);
+              // Optionally, you could set the image to a fallback here if it fails,
+              // but next/image might handle some of this, or you'd need state.
+              // For now, just logging the error.
+            }}
           />
         </div>
       </CardHeader>
