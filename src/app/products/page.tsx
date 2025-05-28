@@ -10,7 +10,7 @@ import ProductFilters from '@/components/products/ProductFilters';
 import ProductSort from '@/components/products/ProductSort';
 import { PRODUCT_CATEGORIES, DIETARY_TAGS } from '@/lib/constants';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Search, Loader2 } from 'lucide-react'; // Added Loader2
 import Link from 'next/link';
 
 export default function ProductsPage() {
@@ -35,7 +35,7 @@ export default function ProductsPage() {
       setIsLoading(true);
       const products = await fetchProductsFromDb();
       setAllProducts(products);
-      setFilteredProducts(products); 
+      // Initial filtering will be handled by the main filter useEffect
       setIsLoading(false);
     };
     loadProducts();
@@ -49,10 +49,12 @@ export default function ProductsPage() {
     return 1000;
   }, [allProducts]);
 
-  // Update initial priceRange filter once maxPrice is calculated
+  // Update initial priceRange filter once maxPrice is calculated and allProducts are loaded
   useEffect(() => {
-    setFilters(prev => ({...prev, priceRange: [0, maxPrice]}));
-  }, [maxPrice]);
+    if (allProducts.length > 0) { // Ensure maxPrice is based on actual products
+        setFilters(prev => ({...prev, priceRange: [0, maxPrice]}));
+    }
+  }, [maxPrice, allProducts]);
 
 
   useEffect(() => {
@@ -61,7 +63,7 @@ export default function ProductsPage() {
     if (filters.searchQuery) {
       currentProducts = currentProducts.filter(product =>
         product.name.toLowerCase().includes(filters.searchQuery!.toLowerCase()) ||
-        product.description.toLowerCase().includes(filters.searchQuery!.toLowerCase())
+        (product.description && product.description.toLowerCase().includes(filters.searchQuery!.toLowerCase()))
       );
     }
 
@@ -98,6 +100,7 @@ export default function ProductsPage() {
         break;
       case 'latest': 
       default:
+        // Assuming products from DB might not have a date, sort by ID as a proxy for "latest" or "default"
         currentProducts.sort((a,b) => (a.id && b.id) ? a.id.localeCompare(b.id) : 0);
         break;
     }
@@ -122,7 +125,13 @@ export default function ProductsPage() {
   };
 
   const handleSuggestionClick = (productName: string) => {
-    setFilters(prev => ({ ...prev, searchQuery: productName }));
+    setFilters({
+      searchQuery: productName,
+      // Reset other filters to ensure the suggested product is prioritized
+      category: [],
+      dietaryTags: [],
+      priceRange: [0, maxPrice] // Reset to full range using the calculated maxPrice
+    });
     setSearchSuggestions([]);
     setShowSuggestions(false);
   };
@@ -145,7 +154,11 @@ export default function ProductsPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="text-center py-20">
           <h1 className="text-4xl font-serif font-bold text-brand-sienna mb-8">Our Oils</h1>
-          <p className="text-lg text-muted-foreground">Loading our exquisite collection...</p>
+           <div className="flex flex-col items-center justify-center">
+            <Loader2 className="h-12 w-12 text-brand-gold animate-spin mb-4" />
+            <p className="text-lg text-muted-foreground">Loading our exquisite collection...</p>
+          </div>
+          {/* Placeholder for loading state cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8 mt-8">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="bg-card p-4 rounded-lg shadow animate-pulse">
