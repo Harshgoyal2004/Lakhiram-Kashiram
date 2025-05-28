@@ -75,3 +75,10 @@ export type SortOption =
   | "name-asc"
   | "name-desc"
   | "latest";
+
+export interface ContactFormPayload {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+}

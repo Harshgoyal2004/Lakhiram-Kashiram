@@ -1,29 +1,66 @@
 
 "use client";
 
+import { useState, type FormEvent } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, Phone, Mail, Navigation } from 'lucide-react';
+import { MapPin, Phone, Mail, Navigation, Loader2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import type { ContactFormPayload } from '@/lib/types';
 
 export default function ContactPage() {
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // Handle form submission logic here (e.g., send email, save to DB)
-    toast({
-      title: "Message Sent!",
-      description: "Thank you for contacting us. We'll get back to you soon.",
-    });
-    (event.target as HTMLFormElement).reset();
+    setIsLoading(true);
+
+    const formData = new FormData(event.currentTarget);
+    const payload: ContactFormPayload = {
+      name: formData.get('name') as string,
+      email: formData.get('email') as string,
+      subject: formData.get('subject') as string,
+      message: formData.get('message') as string,
+    };
+
+    try {
+      const response = await fetch('/api/submit-contact-form', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to send message.');
+      }
+
+      toast({
+        title: "Message Sent!",
+        description: "Thank you for contacting us. We'll get back to you soon.",
+      });
+      (event.target as HTMLFormElement).reset();
+    } catch (error: any) {
+      toast({
+        title: "Error Sending Message",
+        description: error.message || "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const address = "510, Lahori Gate, Khari Baoli, New Delhi, India - 110006";
   const googleMapsUrl = "https://www.google.com/maps/place/Lakhiram+Kashiram/@28.6569138,77.2164171,17z/data=!3m1!4b1!4m6!3m5!1s0x390cfd12ea988a99:0x4de55569476eec4c!8m2!3d28.6569091!4d77.2189974!16s%2Fg%2F12hqn7ggn?entry=ttu&g_ep=EgoyMDI1MDUyMS4wIKXMDSoASAFQAw%3D%3D";
+
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -46,23 +83,23 @@ export default function ContactPage() {
                 <div className="grid sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="name">Full Name</Label>
-                    <Input id="name" type="text" placeholder="Your Name" required />
+                    <Input id="name" name="name" type="text" placeholder="Your Name" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email Address</Label>
-                    <Input id="email" type="email" placeholder="you@example.com" required />
+                    <Input id="email" name="email" type="email" placeholder="you@example.com" required />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="subject">Subject</Label>
-                  <Input id="subject" type="text" placeholder="Reason for contacting" required />
+                  <Input id="subject" name="subject" type="text" placeholder="Reason for contacting" required />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="message">Message</Label>
-                  <Textarea id="message" placeholder="Write your message here..." rows={5} required />
+                  <Textarea id="message" name="message" placeholder="Write your message here..." rows={5} required />
                 </div>
-                <Button type="submit" size="lg" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-lg py-3">
-                  Send Message
+                <Button type="submit" size="lg" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-lg py-3" disabled={isLoading}>
+                  {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Send Message"}
                 </Button>
               </form>
             </CardContent>
