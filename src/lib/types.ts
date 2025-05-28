@@ -35,7 +35,9 @@ export interface UserProfile {
 }
 
 export interface Address {
-  id: string;
+  id?: string; // Optional if embedded
+  customerName: string;
+  customerEmail: string;
   street: string;
   city: string;
   state: string;
@@ -45,13 +47,18 @@ export interface Address {
 }
 
 export interface Order {
-  id: string;
-  date: string; // ISO string or Date object
+  id?: string; // Firestore document ID will be auto-generated or set after creation
+  userId: string; // Firebase Auth UID of the user who placed the order
+  createdAt: Timestamp; // Firestore server timestamp
   items: CartItem[];
   totalAmount: number;
-  status: 'Pending' | 'Shipped' | 'Delivered' | 'Cancelled';
+  status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
   shippingAddress: Address;
   billingAddress?: Address; // Optional, can be same as shipping
+  // Mock payment details - not for real transactions
+  mockPaymentDetails?: {
+    transactionId: string; // A simulated transaction ID
+  };
 }
 
 export interface Filters {
@@ -68,4 +75,3 @@ export type SortOption =
   | "name-asc"
   | "name-desc"
   | "latest";
-
