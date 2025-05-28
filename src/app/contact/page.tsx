@@ -23,7 +23,7 @@ export default function ContactPage() {
   };
 
   const address = "510, Lahori Gate, Khari Baoli, New Delhi, India - 110006";
-  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+  const googleMapsUrl = "https://www.google.com/maps/place/Lakhiram+Kashiram/@28.6569138,77.2164171,17z/data=!3m1!4b1!4m6!3m5!1s0x390cfd12ea988a99:0x4de55569476eec4c!8m2!3d28.6569091!4d77.2189974!16s%2Fg%2F12hqn7ggn?entry=ttu&g_ep=EgoyMDI1MDUyMS4wIKXMDSoASAFQAw%3D%3D";
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -76,10 +76,10 @@ export default function ContactPage() {
             <div>
               <h3 className="text-xl font-semibold text-foreground">Our Address</h3>
               <p className="text-muted-foreground">{address}</p>
-              <a 
-                href={googleMapsUrl} 
-                target="_blank" 
-                rel="noopener noreferrer" 
+              <a
+                href={googleMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-sm text-primary hover:underline mt-2 inline-flex items-center"
               >
                 <Navigation className="mr-1 h-4 w-4" /> Get Directions
