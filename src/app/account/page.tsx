@@ -1,21 +1,30 @@
+
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MOCK_USER_ID } from '@/lib/constants';
-import type { UserProfile, Order } from '@/lib/types';
+import { MOCK_USER_ID } from '@/lib/constants'; // MOCK_USER_ID might be used for mock data unrelated to auth
+import type { UserProfile, Order } from '@/lib/types'; // UserProfile here is for MOCK_USER_PROFILE structure
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge'; // Added missing import
 import { Package, MapPin, UserCircle2, LogOut } from 'lucide-react';
+import { auth } from '@/lib/firebase';
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged,
+  type User 
+} from 'firebase/auth';
+import { useToast } from "@/hooks/use-toast";
 
-// Mock user data for logged-in state
-const MOCK_USER_PROFILE: UserProfile = {
-  id: MOCK_USER_ID,
-  name: "Aarav Sharma",
-  email: "aarav.sharma@example.com",
+
+// Mock user data for addresses and orders, will be replaced by Firestore later
+const MOCK_USER_PROFILE_DETAILS: Pick<UserProfile, "addresses" | "purchaseHistory"> = {
   addresses: [
     { id: "addr1", street: "123 Royal Palms", city: "Mumbai", state: "Maharashtra", zip: "400065", country: "India", isDefault: true },
     { id: "addr2", street: "456 Heritage Lane", city: "Delhi", state: "Delhi", zip: "110001", country: "India" },
@@ -27,40 +36,88 @@ const MOCK_USER_PROFILE: UserProfile = {
 };
 
 const MOCK_ORDERS: Order[] = [
-  { id: "order1", date: "2024-05-15T10:30:00Z", items: [{ id: '1', name: 'Pure Mustard Oil', description: '', price: 180, imageUrl: '', category: 'Mustard Oil', quantity: 2, size: '1L' }], totalAmount: 360, status: "Delivered", shippingAddress: MOCK_USER_PROFILE.addresses![0] },
-  { id: "order2", date: "2024-06-01T14:00:00Z", items: [{ id: '3', name: 'Extra Virgin Olive Oil', description: '', price: 750, imageUrl: '', category: 'Olive Oil', quantity: 1, size: '750ml' }], totalAmount: 750, status: "Shipped", shippingAddress: MOCK_USER_PROFILE.addresses![0] },
+  { id: "order1", date: "2024-05-15T10:30:00Z", items: [{ id: '1', name: 'Pure Mustard Oil', description: '', price: 180, imageUrl: '', category: 'Mustard Oil', quantity: 2, size: '1L' }], totalAmount: 360, status: "Delivered", shippingAddress: MOCK_USER_PROFILE_DETAILS.addresses![0] },
+  { id: "order2", date: "2024-06-01T14:00:00Z", items: [{ id: '3', name: 'Extra Virgin Olive Oil', description: '', price: 750, imageUrl: '', category: 'Olive Oil', quantity: 1, size: '750ml' }], totalAmount: 750, status: "Shipped", shippingAddress: MOCK_USER_PROFILE_DETAILS.addresses![0] },
 ];
 
 
 export default function AccountPage() {
-  // Simulate auth state. In a real app, this would come from an auth context/hook.
-  const [isLoggedIn, setIsLoggedIn] = useState(false); 
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  // Form state
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState(''); // For signup form
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setLoading(false);
+    });
+    return () => unsubscribe(); // Cleanup subscription on unmount
+  }, []);
+
+  const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
-    // Mock login
-    setIsLoggedIn(true);
-    setCurrentUser(MOCK_USER_PROFILE);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      toast({ title: "Logged In", description: "Welcome back!" });
+      setEmail('');
+      setPassword('');
+    } catch (error: any) {
+      console.error("Login error:", error);
+      toast({ title: "Login Failed", description: error.message, variant: "destructive" });
+    }
   };
   
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: FormEvent) => {
     e.preventDefault();
-    // Mock signup & login
-    setIsLoggedIn(true);
-    setCurrentUser({ ...MOCK_USER_PROFILE, name: "New User", email: "newuser@example.com" }); // Example new user
+    try {
+      // Note: Firebase createUserWithEmailAndPassword doesn't set displayName by default.
+      // To set displayName, you'd use updateProfile after user creation.
+      // For now, we're just creating the user with email/password.
+      await createUserWithEmailAndPassword(auth, email, password);
+      // Optionally update profile here if name is collected and important at signup
+      // if (auth.currentUser && name) {
+      //   await updateProfile(auth.currentUser, { displayName: name });
+      // }
+      toast({ title: "Signup Successful", description: "Your account has been created." });
+      setEmail('');
+      setPassword('');
+      setName('');
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      toast({ title: "Signup Failed", description: error.message, variant: "destructive" });
+    }
   };
 
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setCurrentUser(null);
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      toast({ title: "Logged Out", description: "You have been successfully logged out." });
+    } catch (error: any) {
+      console.error("Logout error:", error);
+      toast({ title: "Logout Failed", description: error.message, variant: "destructive" });
+    }
   };
 
-  if (isLoggedIn && currentUser) {
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-12 flex justify-center items-center min-h-[60vh]">
+        <p>Loading account information...</p> {/* Replace with a proper loader if desired */}
+      </div>
+    );
+  }
+
+  if (currentUser) {
     return (
       <div className="container mx-auto px-4 py-12">
         <div className="flex flex-col md:flex-row justify-between items-center mb-10">
-          <h1 className="text-4xl md:text-5xl font-serif font-bold text-brand-sienna mb-4 md:mb-0">Welcome, {currentUser.name}</h1>
+          <h1 className="text-4xl md:text-5xl font-serif font-bold text-brand-sienna mb-4 md:mb-0">
+            Welcome, {currentUser.displayName || currentUser.email?.split('@')[0] || 'User'}
+          </h1>
           <Button variant="outline" onClick={handleLogout} className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground">
             <LogOut className="mr-2 h-4 w-4" /> Logout
           </Button>
@@ -77,16 +134,16 @@ export default function AccountPage() {
             <Card className="bg-card shadow-lg">
               <CardHeader><CardTitle className="text-2xl font-serif text-brand-sienna">Personal Information</CardTitle></CardHeader>
               <CardContent className="space-y-4">
-                <div><Label>Name:</Label><p className="text-lg">{currentUser.name}</p></div>
+                <div><Label>Name:</Label><p className="text-lg">{currentUser.displayName || "Not set"}</p></div>
                 <div><Label>Email:</Label><p className="text-lg">{currentUser.email}</p></div>
-                <Button>Edit Profile</Button>
+                <Button disabled>Edit Profile (Coming Soon)</Button>
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="orders">
             <Card className="bg-card shadow-lg">
-              <CardHeader><CardTitle className="text-2xl font-serif text-brand-sienna">Order History</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-2xl font-serif text-brand-sienna">Order History (Mock Data)</CardTitle></CardHeader>
               <CardContent>
                 {MOCK_ORDERS.length > 0 ? (
                   <ul className="space-y-6">
@@ -113,23 +170,23 @@ export default function AccountPage() {
 
           <TabsContent value="addresses">
             <Card className="bg-card shadow-lg">
-              <CardHeader><CardTitle className="text-2xl font-serif text-brand-sienna">Manage Addresses</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-2xl font-serif text-brand-sienna">Manage Addresses (Mock Data)</CardTitle></CardHeader>
               <CardContent>
-                {currentUser.addresses && currentUser.addresses.length > 0 ? (
+                {MOCK_USER_PROFILE_DETAILS.addresses && MOCK_USER_PROFILE_DETAILS.addresses.length > 0 ? (
                   <ul className="space-y-4">
-                    {currentUser.addresses.map(addr => (
+                    {MOCK_USER_PROFILE_DETAILS.addresses.map(addr => (
                       <li key={addr.id} className="p-4 border border-border rounded-md bg-background/50">
                         <p className="font-semibold">{addr.street}, {addr.city}, {addr.state} - {addr.zip}</p>
                         {addr.isDefault && <Badge className="mt-1">Default</Badge>}
                         <div className="mt-2 space-x-2">
-                           <Button variant="link" className="p-0 h-auto text-primary">Edit</Button>
-                           <Button variant="link" className="p-0 h-auto text-destructive">Delete</Button>
+                           <Button variant="link" className="p-0 h-auto text-primary" disabled>Edit</Button>
+                           <Button variant="link" className="p-0 h-auto text-destructive" disabled>Delete</Button>
                         </div>
                       </li>
                     ))}
                   </ul>
                 ) : <p>You have no saved addresses.</p>}
-                <Button className="mt-6">Add New Address</Button>
+                <Button className="mt-6" disabled>Add New Address (Coming Soon)</Button>
               </CardContent>
             </Card>
           </TabsContent>
@@ -156,11 +213,11 @@ export default function AccountPage() {
               <form onSubmit={handleLogin} className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="login-email">Email</Label>
-                  <Input id="login-email" type="email" placeholder="you@example.com" required />
+                  <Input id="login-email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="login-password">Password</Label>
-                  <Input id="login-password" type="password" required />
+                  <Input id="login-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
                 </div>
                 <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-lg py-3">Login</Button>
               </form>
@@ -171,21 +228,21 @@ export default function AccountPage() {
           <Card className="bg-card shadow-xl">
             <CardHeader>
               <CardTitle className="text-3xl font-serif text-brand-sienna">Create an Account</CardTitle>
-              <CardDescription>Join {MOCK_USER_ID} and unlock a world of premium oils and personalized offers.</CardDescription>
+              <CardDescription>Join and unlock a world of premium oils and personalized offers.</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSignup} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-name">Full Name</Label>
-                  <Input id="signup-name" type="text" placeholder="Your Name" required />
+                  <Label htmlFor="signup-name">Full Name (Optional)</Label>
+                  <Input id="signup-name" type="text" placeholder="Your Name" value={name} onChange={(e) => setName(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">Email</Label>
-                  <Input id="signup-email" type="email" placeholder="you@example.com" required />
+                  <Input id="signup-email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-password">Password</Label>
-                  <Input id="signup-password" type="password" required />
+                  <Input id="signup-password" type="password" placeholder="Must be at least 6 characters" value={password} onChange={(e) => setPassword(e.target.value)} required />
                 </div>
                 <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-lg py-3">Create Account</Button>
               </form>
@@ -196,3 +253,5 @@ export default function AccountPage() {
     </div>
   );
 }
+
+    
