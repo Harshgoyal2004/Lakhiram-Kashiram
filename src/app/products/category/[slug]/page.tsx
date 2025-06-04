@@ -53,6 +53,19 @@ export default function CategoryProductsPage() {
     fetchProductsData();
   }, [slug]);
 
+  const handleInputFocus = () => {
+    if (searchQuery.length > 0 && initialProducts && initialProducts.length > 0) {
+      const filtered = initialProducts
+        .filter(product => product.name.toLowerCase().includes(searchQuery.toLowerCase()))
+        .slice(0, 5);
+      setSearchSuggestions(filtered);
+      setShowSuggestions(filtered.length > 0);
+    } else if (searchQuery.length === 0) {
+      setSearchSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     setSearchQuery(query);
@@ -62,21 +75,16 @@ export default function CategoryProductsPage() {
         .filter(product => product.name.toLowerCase().includes(query.toLowerCase()))
         .slice(0, 5);
       setSearchSuggestions(filtered);
-      if (filtered.length > 0) {
-        setShowSuggestions(true);
-      } else {
-        setShowSuggestions(false); 
-      }
+      setShowSuggestions(filtered.length > 0);
     } else {
-      setShowSuggestions(false);
       setSearchSuggestions([]);
+      setShowSuggestions(false);
     }
   };
 
   const handleSuggestionClick = (product: Product) => {
     setSearchQuery(product.name);
     setShowSuggestions(false);
-    setSearchSuggestions([]);
   };
 
   useEffect(() => {
@@ -159,11 +167,7 @@ export default function CategoryProductsPage() {
             placeholder={`Search in ${categoryName}...`}
             value={searchQuery}
             onChange={handleSearchChange}
-            onFocus={() => {
-              if (searchQuery.length > 0 && searchSuggestions.length > 0) {
-                setShowSuggestions(true);
-              }
-            }}
+            onFocus={handleInputFocus}
             className="text-base"
           />
           {showSuggestions && searchSuggestions.length > 0 && (
