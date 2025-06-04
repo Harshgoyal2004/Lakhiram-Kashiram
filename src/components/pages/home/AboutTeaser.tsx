@@ -8,18 +8,8 @@ export default function AboutTeaser() {
   return (
     <section className="py-16 md:py-24 bg-brand-antique-white/50">
       <div className="container mx-auto px-4">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div>
-            <Image 
-              src="https://placehold.co/800x600.png" 
-              alt="Image representing the company's heritage or operations"
-              width={800}
-              height={600}
-              className="rounded-lg shadow-xl object-cover"
-              data-ai-hint="company team meeting"
-            />
-          </div>
-          <div className="text-center md:text-left">
+        <div className="grid md:grid-cols-1 gap-12 items-center">
+          <div className="text-center">
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-brand-sienna mb-6">
               Our Legacy, <span className="text-brand-gold">Your Trust</span>
             </h2>

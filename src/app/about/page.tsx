@@ -1,3 +1,4 @@
+
 import Image from 'next/image';
 import { SITE_NAME, COMPANY_TAGLINE, COMPANY_FOUNDING_YEAR } from '@/lib/constants';
 
@@ -11,19 +12,9 @@ export default function AboutPage() {
       </div>
 
       <section className="mb-16">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div className="relative aspect-[4/3] rounded-lg overflow-hidden shadow-xl">
-            <Image 
-              src="https://placehold.co/800x600.png" 
-              alt="Historical depiction of Lakhi Ram Kashi Ram operations"
-              fill
-              sizes="(max-width: 768px) 100vw, 50vw"
-              className="object-cover"
-              data-ai-hint="vintage oil mill"
-            />
-          </div>
+        <div className="grid md:grid-cols-1 gap-12 items-center">
           <div>
-            <h2 className="text-3xl font-serif font-semibold text-brand-sienna mb-6">Our Story</h2>
+            <h2 className="text-3xl font-serif font-semibold text-brand-sienna mb-6 text-center md:text-left">Our Story</h2>
             <p className="text-lg text-foreground/80 leading-relaxed mb-4">
               For nearly a century, {SITE_NAME} has been a cornerstone in households, providing cooking oils that are synonymous with purity, quality, and authentic taste. Founded in {COMPANY_FOUNDING_YEAR} by visionary entrepreneurs, our journey began with a simple mission: to deliver uncompromised quality to every kitchen.
             </p>
