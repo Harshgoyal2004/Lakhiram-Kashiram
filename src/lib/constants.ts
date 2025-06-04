@@ -6,9 +6,9 @@ export const NAV_LINKS = [
   { href: '/contact', label: 'Contact Us' },
 ];
 
-export const SITE_NAME = "Lakhi Ram Kashi Ram Oils";
+export const SITE_NAME = "Lakhi Ram Kashi Ram";
 export const COMPANY_TAGLINE = "A Legacy of Purity & Trust";
-export const COMPANY_FOUNDING_YEAR = "1923";
+export const COMPANY_FOUNDING_YEAR = "1952";
 
 export const PRODUCT_CATEGORIES_INFO = [
   { slug: 'essential-spice-oil', name: 'Essential | Spice Oil', description: 'Explore our range of pure essential and spice oils.', dataAiHint: 'essential oils', imageUrl: 'https://media.istockphoto.com/id/1304141544/photo/essential-oils-with-rosemary-cloves-cinnamon.jpg?s=612x612&w=0&k=20&c=jQFlCPP5Jn--ZIky9yE2jZCAmdgboh4kIpPMSipWhto=' },
