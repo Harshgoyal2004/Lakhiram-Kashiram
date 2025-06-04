@@ -1,21 +1,31 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Menu, X } from 'lucide-react'; // ShoppingBag, User icons removed
+import { usePathname, useRouter } from 'next/navigation';
+import { Menu, X, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
-import { NAV_LINKS } from '@/lib/constants'; // SITE_NAME might be used for Logo if needed
+import { NAV_LINKS } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import Logo from './Logo';
-// useCart removed
 
 export default function MobileNav() {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const pathname = usePathname();
-  // const { getItemCount } = useCart(); // Removed
+  const router = useRouter();
+
+  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery('');
+      setIsOpen(false); // Close sheet after search
+    }
+  };
 
   return (
     <div className="md:hidden">
@@ -37,13 +47,30 @@ export default function MobileNav() {
                   </Button>
               </SheetClose>
             </div>
-            <nav className="flex flex-col space-y-2 p-6">
+
+            <div className="p-6 border-b border-border">
+              <form onSubmit={handleSearchSubmit} className="flex items-center">
+                <Input
+                  type="search"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="rounded-r-none focus:ring-0 focus:ring-offset-0 border-r-0 text-sm"
+                />
+                <Button type="submit" variant="outline" size="icon" className="rounded-l-none border-l-0 h-10 w-10">
+                  <Search className="h-4 w-4" />
+                  <span className="sr-only">Search</span>
+                </Button>
+              </form>
+            </div>
+
+            <nav className="flex flex-col space-y-1 p-6">
               {NAV_LINKS.map((link) => (
                 <SheetClose asChild key={link.href}>
                   <Link
                     href={link.href}
                     className={cn(
-                      "text-lg font-medium py-2 px-3 rounded-md transition-colors hover:bg-accent/50 hover:text-brand-gold",
+                      "text-lg font-medium py-2.5 px-3 rounded-md transition-colors hover:bg-accent/50 hover:text-brand-gold",
                       pathname === link.href ? "bg-accent/50 text-brand-gold" : "text-foreground/80"
                     )}
                     onClick={() => setIsOpen(false)}
@@ -53,7 +80,6 @@ export default function MobileNav() {
                 </SheetClose>
               ))}
             </nav>
-            {/* Bottom section with account/cart links removed */}
           </div>
         </SheetContent>
       </Sheet>
