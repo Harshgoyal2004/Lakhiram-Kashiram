@@ -7,9 +7,22 @@ import type { Product } from '@/lib/types';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, doc, getDoc, query, where, limit } from 'firebase/firestore';
 import { SITE_NAME } from '@/lib/constants';
-import { generateProductDescription, type GenerateProductDescriptionInput } from '@/ai/flows/generate-product-description-flow';
 
-const AI_DESCRIPTION_PLACEHOLDER = "AI_PLACEHOLDER_DESCRIPTION_NEEDS_GENERATION";
+// Placeholder for products that need a description.
+const STATIC_DESCRIPTION_PLACEHOLDER_TEMPLATE = (productName: string, categoryName: string): string => `
+Discover the quality and purity of ${productName} from ${SITE_NAME}.
+<br /><br />
+As a leading name in the ${categoryName} category, we ensure that ${productName} meets the highest standards. Our commitment to excellence means you receive a product that is authentic and reliable.
+<br /><br />
+**Key Benefits & Uses:**
+(Details about typical uses and benefits for this type of product will be added here. e.g., culinary uses, therapeutic properties, suitability for different applications, etc.)
+<br /><br />
+**Why Choose ${SITE_NAME}?**
+At ${SITE_NAME}, we pride ourselves on our heritage and expertise in sourcing and providing the finest oils and extracts. Our rigorous quality control processes guarantee that you receive only the best.
+<br /><br />
+${categoryName.toLowerCase().includes('ayurvedic') || categoryName.toLowerCase().includes('essential') ? `While ${productName} has been traditionally used for various wellness purposes, this information is not intended to diagnose, treat, cure, or prevent any disease. Please consult with a healthcare professional for specific health concerns.` : ''}
+`;
+
 
 // Helper function to convert Firestore document to Product type
 function docToProduct(documentSnapshot: any): Product {
@@ -18,7 +31,7 @@ function docToProduct(documentSnapshot: any): Product {
     id: documentSnapshot.id,
     name: data.name || '',
     description: data.description || '',
-    longDescription: data.longDescription || AI_DESCRIPTION_PLACEHOLDER, // Use placeholder if not present
+    longDescription: data.longDescription || STATIC_DESCRIPTION_PLACEHOLDER_TEMPLATE(data.name || 'this product', data.category || 'our products'),
     imageUrl: data.imageUrl || 'https://placehold.co/600x400.png',
     dataAiHint: data.dataAiHint || (data.category ? data.category.toLowerCase().split(' ')[0] + ' oil' : 'oil bottle'),
     category: data.category || 'Uncategorized',
@@ -120,7 +133,7 @@ const pgWaterExtractProductNames: string[] = [
   "Sunthi", "Supari", "Tea tree", "Thyme", "Tulsi", "Turmeric", "Vacha", "Vaividang", "Vanchlochan", "Vashak", "Vidarikand", "Wheat", "Witch Hazel"
 ];
 
-// Predefined list of product names for the "Ayurvedic Oil" category (assuming same as PG for now, adjust if different)
+// Predefined list of product names for the "Ayurvedic Oil" category
 const ayurvedicOilProductNames: string[] = [
   "Akarkara", "Almond", "Aloe vera", "Amla", "Ananas", "Anantmool", "Anar", "Anjeer", "Apple", "Arjuna", "Arnica", "Ashwagandha", "Avocado",
   "Babchi", "Baboona", "Baheda", "Banana", "Beal fruit", "Bhringraj", "Bhui amla", "Black berry", "Blue berry", "Brahmi", "Chameli", "Chironji", "Coffea",
@@ -158,6 +171,8 @@ function generatePlaceholderProducts(productNames: string[], category: string): 
         } else if (!hint.includes("extract") && !nameParts[0].toLowerCase().includes("extract")) {
              hint += " extract";
         }
+        if (name.toLowerCase() === "ghrit kumari (aloe vera)") hint = "aloe vera extract";
+
     } else if (category === "Ayurvedic Oil") {
         hint = nameParts[0].toLowerCase();
         if (name.includes("(")) {
@@ -168,6 +183,7 @@ function generatePlaceholderProducts(productNames: string[], category: string): 
         } else if (!hint.includes("ayurvedic") && !nameParts[0].toLowerCase().includes("ayurvedic") && !name.toLowerCase().includes("oil")) {
              hint += " ayurvedic";
         }
+        if (name.toLowerCase() === "ghrit kumari (aloe vera)") hint = "aloe vera ayurvedic";
     }
 
     if (name.toLowerCase().includes("calendula oil (pure)")) hint = "calendula flower";
@@ -175,14 +191,14 @@ function generatePlaceholderProducts(productNames: string[], category: string): 
     if (name.toLowerCase().includes("curry leaf oil (rco)")) hint = "curry leaf";
     if (name.toLowerCase().includes("garlic oil (pure)")) hint = "garlic bulb";
     if (name.toLowerCase().includes("niroli oil pure")) hint = "neroli flower";
-    if (name.toLowerCase() === "ghrit kumari (aloe vera)") hint = "aloe vera";
     hint = hint.replace(/\(.*\)/, '').trim(); // Remove content in parenthesis for hint
+
 
     return {
       id: `${categorySlug}-${toSlug(name)}-${index}`,
       name: name,
       description: `High-quality ${name}. Sourced for purity and effectiveness by ${SITE_NAME}.`,
-      longDescription: AI_DESCRIPTION_PLACEHOLDER, // Use the placeholder
+      longDescription: STATIC_DESCRIPTION_PLACEHOLDER_TEMPLATE(name, category),
       imageUrl: `https://placehold.co/600x400.png`,
       dataAiHint: hint.trim(),
       category: category,
@@ -247,24 +263,8 @@ export async function getProductById(id: string): Promise<Product | null> {
   let product = allHardcodedProducts.find(p => p.id === id);
 
   if (product) {
-    if (product.longDescription === AI_DESCRIPTION_PLACEHOLDER) {
-      try {
-        console.log(`[getProductById] Generating description for: ${product.name}`);
-        const aiInput: GenerateProductDescriptionInput = {
-          productName: product.name,
-          categoryName: product.category || 'Unknown Category',
-          shortDescription: product.description,
-          characteristics: product.characteristics,
-        };
-        const aiResponse = await generateProductDescription(aiInput);
-        product.longDescription = aiResponse.longDescription;
-        console.log(`[getProductById] Successfully generated description for: ${product.name}`);
-      } catch (e) {
-        console.error(`[getProductById] Failed to generate AI description for ${product.name}:`, e);
-        // Keep placeholder or use a fallback error message
-        product.longDescription = `Details for ${product.name} are being prepared. Please check back soon. (Error generating description)`;
-      }
-    }
+    // For hardcoded products, the longDescription is already set by generatePlaceholderProducts
+    // No need for AI generation here as per the revert request.
     return product;
   }
 
@@ -274,23 +274,7 @@ export async function getProductById(id: string): Promise<Product | null> {
 
     if (productDoc.exists()) {
       const fetchedProduct = docToProduct(productDoc);
-      // Potentially generate AI description for Firestore products too if placeholder is found
-      if (fetchedProduct.longDescription === AI_DESCRIPTION_PLACEHOLDER) {
-         try {
-            console.log(`[getProductById] Generating description for Firestore product: ${fetchedProduct.name}`);
-            const aiInput: GenerateProductDescriptionInput = {
-                productName: fetchedProduct.name,
-                categoryName: fetchedProduct.category || 'Unknown Category',
-                shortDescription: fetchedProduct.description,
-                characteristics: fetchedProduct.characteristics,
-            };
-            const aiResponse = await generateProductDescription(aiInput);
-            fetchedProduct.longDescription = aiResponse.longDescription;
-          } catch (e) {
-            console.error(`[getProductById] Failed to generate AI description for Firestore product ${fetchedProduct.name}:`, e);
-            fetchedProduct.longDescription = `Details for ${fetchedProduct.name} are being prepared. (Error fetching description details)`;
-          }
-      }
+      // If fetched from Firestore and longDescription is missing, it will use the static placeholder from docToProduct.
       return fetchedProduct;
     } else {
       console.log(`No such product document in Firestore for ID: ${id}!`);
