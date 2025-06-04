@@ -194,9 +194,9 @@ export default function CategoryProductsPage() {
   );
 }
 
-// Optional: Pre-render pages for these known categories
-export async function generateStaticParams() {
-  return PRODUCT_CATEGORIES_INFO.map((category) => ({
-    slug: category.slug,
-  }));
-}
+// Removed generateStaticParams function to resolve conflict with "use client"
+// export async function generateStaticParams() {
+//   return PRODUCT_CATEGORIES_INFO.map((category) => ({
+//     slug: category.slug,
+//   }));
+// }
