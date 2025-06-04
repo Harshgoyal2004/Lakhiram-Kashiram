@@ -130,6 +130,7 @@ export default function ContactPage() {
             <div>
               <h3 className="text-xl font-semibold text-foreground">Phone</h3>
               <p className="text-muted-foreground">+91 9810176808</p>
+              <p className="text-muted-foreground">+91 9818425578</p>
             </div>
           </div>
           <div className="flex items-start space-x-4 p-4 bg-muted/30 rounded-lg">
