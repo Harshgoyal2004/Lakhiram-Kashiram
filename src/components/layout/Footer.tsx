@@ -7,7 +7,7 @@ export default function Footer() {
   return (
     <footer className="bg-muted/50 border-t border-border/40 text-muted-foreground">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
             <h3 className="text-xl font-serif font-semibold text-brand-gold mb-4">{SITE_NAME}</h3>
             <p className="text-sm">{COMPANY_TAGLINE}</p>
@@ -20,13 +20,6 @@ export default function Footer() {
               <li><Link href="/about" className="hover:text-brand-gold transition-colors">About Us</Link></li>
               <li><Link href="/contact" className="hover:text-brand-gold transition-colors">Contact Us</Link></li>
             </ul>
-          </div>
-          <div>
-            <h4 className="text-lg font-serif font-semibold text-foreground mb-4">Connect With Us</h4>
-            <p className="text-sm">
-              Follow us on social media for updates and offers. (Social links to be added)
-            </p>
-            {/* Placeholder for social icons */}
           </div>
         </div>
         <div className="mt-12 border-t border-border/40 pt-8 text-center text-xs">
