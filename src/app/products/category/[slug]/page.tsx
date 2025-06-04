@@ -31,7 +31,7 @@ export default function CategoryProductsPage() {
 
     const categoryInfo = PRODUCT_CATEGORIES_INFO.find(cat => cat.slug === slug);
     if (!categoryInfo) {
-      notFound(); // Or handle as category not found
+      notFound(); 
       return;
     }
     setCategoryName(categoryInfo.name);
@@ -45,7 +45,7 @@ export default function CategoryProductsPage() {
         }
       } catch (error) {
         console.error(`Failed to fetch products for category ${categoryInfo?.name}:`, error);
-        setInitialProducts([]); // Set to empty array on error
+        setInitialProducts([]); 
       } finally {
         setIsLoading(false);
       }
@@ -56,12 +56,17 @@ export default function CategoryProductsPage() {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     setSearchQuery(query);
-    if (query.length > 0 && initialProducts.length > 0) {
-      const suggestions = initialProducts
+
+    if (query.length > 0 && initialProducts && initialProducts.length > 0) {
+      const filtered = initialProducts
         .filter(product => product.name.toLowerCase().includes(query.toLowerCase()))
         .slice(0, 5);
-      setSearchSuggestions(suggestions);
-      setShowSuggestions(true);
+      setSearchSuggestions(filtered);
+      if (filtered.length > 0) {
+        setShowSuggestions(true);
+      } else {
+        setShowSuggestions(false); 
+      }
     } else {
       setShowSuggestions(false);
       setSearchSuggestions([]);
@@ -118,7 +123,6 @@ export default function CategoryProductsPage() {
   }
   
   if (!categoryName) {
-     // This case should ideally be handled by the initial notFound() if slug is invalid
     return (
       <div className="container mx-auto px-4 py-12 text-center">
         <h1 className="text-3xl font-semibold text-destructive">Category Not Found</h1>
@@ -155,7 +159,11 @@ export default function CategoryProductsPage() {
             placeholder={`Search in ${categoryName}...`}
             value={searchQuery}
             onChange={handleSearchChange}
-            onFocus={() => searchQuery.length > 0 && initialProducts && setSearchSuggestions(initialProducts.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase())).slice(0,5))}
+            onFocus={() => {
+              if (searchQuery.length > 0 && searchSuggestions.length > 0) {
+                setShowSuggestions(true);
+              }
+            }}
             className="text-base"
           />
           {showSuggestions && searchSuggestions.length > 0 && (
@@ -193,10 +201,3 @@ export default function CategoryProductsPage() {
     </div>
   );
 }
-
-// Removed generateStaticParams function to resolve conflict with "use client"
-// export async function generateStaticParams() {
-//   return PRODUCT_CATEGORIES_INFO.map((category) => ({
-//     slug: category.slug,
-//   }));
-// }
