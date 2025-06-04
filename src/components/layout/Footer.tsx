@@ -13,6 +13,9 @@ export default function Footer() {
   //   { href: '#', icon: Linkedin, label: 'LinkedIn' },
   // ];
 
+  const GST_NUMBER = "07AACFL4653Q1ZT";
+  const FSSAI_NUMBER = "13320001000652";
+
   return (
     <footer className="bg-muted/50 border-t border-border/40 text-muted-foreground">
       <div className="container mx-auto px-4 py-12">
@@ -35,6 +38,10 @@ export default function Footer() {
         <div className="mt-12 border-t border-border/40 pt-8 text-center text-xs">
           <p>© {currentYear} {SITE_NAME}. All rights reserved.</p>
           <p>Designed with heritage, crafted for today.</p>
+          <div className="mt-4 space-y-1 md:space-y-0 md:space-x-4">
+            <p className="inline-block md:mr-4">GSTIN: {GST_NUMBER}</p>
+            <p className="inline-block">FSSAI Lic. No.: {FSSAI_NUMBER}</p>
+          </div>
         </div>
       </div>
     </footer>
