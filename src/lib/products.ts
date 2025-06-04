@@ -16,7 +16,7 @@ function docToProduct(documentSnapshot: any): Product {
     description: data.description || '',
     longDescription: data.longDescription || '',
     imageUrl: data.imageUrl || 'https://placehold.co/600x400.png',
-    dataAiHint: data.dataAiHint || 'oil bottle',
+    dataAiHint: data.dataAiHint || (data.category ? data.category.toLowerCase().split(' ')[0] + ' oil' : 'oil bottle'),
     category: data.category || 'Uncategorized',
     characteristics: data.characteristics || [],
     usageTips: data.usageTips || '',
@@ -65,6 +65,19 @@ export async function getFeaturedProducts(count: number = 3): Promise<Product[]>
     return products;
   } catch (error) {
     console.error("Error fetching featured products:", error);
+    return [];
+  }
+}
+
+export async function getProductsByCategoryName(categoryName: string): Promise<Product[]> {
+  try {
+    const productsCollection = collection(db, 'products');
+    const q = query(productsCollection, where("category", "==", categoryName));
+    const querySnapshot = await getDocs(q);
+    const products = querySnapshot.docs.map(docToProduct);
+    return products;
+  } catch (error) {
+    console.error(`Error fetching products for category "${categoryName}":`, error);
     return [];
   }
 }
