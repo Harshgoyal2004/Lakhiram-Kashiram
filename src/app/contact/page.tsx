@@ -60,7 +60,7 @@ export default function ContactPage() {
     }
   };
 
-  const address = "510, Lahori Gate, Khari Baoli, New Delhi, India - 110006";
+  const address = "510-511, Lahori Gate, Khari Baoli, New Delhi, India - 110006";
   const googleMapsUrl = "https://www.google.com/maps/place/Lakhiram+Kashiram/@28.6569138,77.2164171,17z/data=!3m1!4b1!4m6!3m5!1s0x390cfd12ea988a99:0x4de55569476eec4c!8m2!3d28.6569091!4d77.2189974!16s%2Fg%2F12hqn7ggn?entry=ttu&g_ep=EgoyMDI1MDUyMS4wIKXMDSoASAFQAw%3D%3D";
 
 
