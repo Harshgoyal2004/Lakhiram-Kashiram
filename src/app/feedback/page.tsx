@@ -15,28 +15,20 @@ import { SITE_NAME } from '@/lib/constants';
 
 const staticTestimonials: StaticTestimonial[] = [
   {
-    id: 'testimonial-1',
-    name: 'Ravi Sharma',
+    id: 'testimonial-harsh-goyal',
+    name: 'Harsh Goyal',
     location: 'Delhi',
-    testimonial: `The quality of oils from ${SITE_NAME} is consistently excellent. I've been a loyal customer for years and highly recommend them.`,
+    testimonial: `Absolutely outstanding quality and service from ${SITE_NAME}! Their products are consistently top-tier. Highly recommended.`,
+    rating: 5,
+    date: 'July 2024',
+  },
+  {
+    id: 'testimonial-dhruv-goyal',
+    name: 'Dhruv Goyal',
+    location: 'Delhi',
+    testimonial: `I'm extremely impressed with the purity and effectiveness of the oils. ${SITE_NAME} has become my go-to supplier.`,
     rating: 5,
     date: 'June 2024',
-  },
-  {
-    id: 'testimonial-2',
-    name: 'Priya Singh',
-    location: 'Mumbai',
-    testimonial: `I recently started using their spice oils for my restaurant, and the difference in flavor is remarkable. Top-notch products and great service!`,
-    rating: 5,
-    date: 'May 2024',
-  },
-  {
-    id: 'testimonial-3',
-    name: 'Amit Patel',
-    location: 'Ahmedabad',
-    testimonial: `Great range of carrier oils. Their almond oil is particularly good for my homemade cosmetic products. Reliable and pure.`,
-    rating: 4,
-    date: 'April 2024',
   },
 ];
 
@@ -120,13 +112,13 @@ export default function FeedbackPage() {
       <div className="text-center mb-16">
         <h1 className="text-5xl md:text-6xl font-serif font-bold text-brand-sienna mb-4">Feedback & Reviews</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          We value your opinion! Share your experience with {SITE_NAME} or read what others are saying.
+          We value your opinion! Share your experience with ${SITE_NAME} or read what others are saying.
         </p>
       </div>
 
       <section className="mb-16">
         <h2 className="text-3xl font-serif font-semibold text-brand-sienna mb-10 text-center">What Our Customers Say</h2>
-        <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-8"> {/* Changed to lg:grid-cols-2 since we have 2 testimonials */}
           {staticTestimonials.map((testimonial) => (
             <Card key={testimonial.id} className="bg-card shadow-lg flex flex-col">
               <CardHeader>
