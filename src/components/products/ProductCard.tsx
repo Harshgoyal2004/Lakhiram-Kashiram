@@ -21,6 +21,8 @@ export default function ProductCard({ product }: ProductCardProps) {
     console.warn(`[ProductCard] Product "${product.name}" (ID: ${product.id}) has an unusual imageUrl: ${product.imageUrl}. Ensure it's a valid Firebase Storage download URL or a placeholder.`);
   }
 
+  const displayCategory = product.category && product.category !== 'Uncategorized';
+
   return (
     <Card className="flex flex-col h-full overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg">
       <CardHeader className="p-0">
@@ -34,9 +36,6 @@ export default function ProductCard({ product }: ProductCardProps) {
             data-ai-hint={product.dataAiHint || "oil product"}
             onError={(e) => {
               console.error(`[ProductCard] Error loading image for product "${product.name}": ${imageUrl}`, e);
-              // Optionally, you could set the image to a fallback here if it fails,
-              // but next/image might handle some of this, or you'd need state.
-              // For now, just logging the error.
             }}
           />
         </div>
@@ -46,7 +45,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         <CardDescription className="text-muted-foreground line-clamp-3 flex-grow">
           {product.description}
         </CardDescription>
-        {product.category && (
+        {displayCategory && (
           <p className="text-sm text-brand-gold font-medium">{product.category}</p>
         )}
         <div className="mt-auto pt-4">

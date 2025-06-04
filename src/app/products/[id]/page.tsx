@@ -65,6 +65,8 @@ export default async function ProductDetailPage({ params }: Props) {
     console.warn(`[ProductDetailPage] Product "${product.name}" (ID: ${product.id}) has an unusual imageUrl: ${product.imageUrl}. Ensure it's a valid Firebase Storage download URL or a placeholder.`);
   }
 
+  const displayCategory = product.category && product.category !== 'Uncategorized';
+
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="mb-8">
@@ -94,7 +96,7 @@ export default async function ProductDetailPage({ params }: Props) {
         <div className="space-y-6">
           <h1 className="text-4xl md:text-5xl font-serif font-bold text-brand-sienna">{product.name}</h1>
           
-          {product.category && (
+          {displayCategory && (
             <Badge variant="secondary" className="text-lg px-4 py-1 bg-brand-gold/20 text-brand-sienna border-brand-gold">
               {product.category}
             </Badge>
