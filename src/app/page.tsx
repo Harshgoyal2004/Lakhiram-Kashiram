@@ -2,9 +2,8 @@
 import HeroSection from '@/components/pages/home/HeroSection';
 import AboutTeaser from '@/components/pages/home/AboutTeaser';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle } from 'lucide-react'; // Example icon
-
-// FeaturedProducts and AiRecommendationsClient are removed
+import { CheckCircle } from 'lucide-react';
+import { SITE_NAME } from '@/lib/constants';
 
 export default function HomePage() {
   return (
@@ -14,12 +13,12 @@ export default function HomePage() {
       <section className="py-16 md:py-24 bg-muted/30 rounded-lg">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-serif font-bold text-brand-sienna mb-6">
-            Your Trusted Partner in Quality Oils
+            Your Trusted Partner in Quality Oils & Commodities
           </h2>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-10">
-            For generations, Lakhi Ram Kashi Ram Oils has been synonymous with excellence in the oil industry. We are committed to sourcing, processing, and delivering the finest quality oils, adhering to the highest standards of purity and ethical practices.
+            For generations, {SITE_NAME} has been a hallmark of excellence in the oil industry and related commodities. We are dedicated to ethical sourcing, meticulous processing, and reliable supply, upholding the highest standards of quality and integrity in all our operations.
           </p>
-          {/* Add more informational content here, similar to pnppexim.com */}
+          {/* You can add more specific details about your business services or company focus here */}
         </div>
       </section>
 
@@ -56,7 +55,7 @@ export default function HomePage() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Our commitment to ethical practices extends to our sourcing, ensuring fair treatment and sustainability.
+                  Our commitment to ethical practices extends to our sourcing, ensuring fair treatment and sustainability across our supply chains.
                 </p>
               </CardContent>
             </Card>
@@ -68,7 +67,7 @@ export default function HomePage() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  We prioritize our clients' needs, offering tailored solutions and reliable service to foster long-term partnerships.
+                  We prioritize our clients' needs, offering tailored solutions and reliable service to foster long-term partnerships and satisfaction.
                 </p>
               </CardContent>
             </Card>
