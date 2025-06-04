@@ -1,12 +1,12 @@
 
 "use client";
 
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { Menu, X, Search } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { Menu, X } from 'lucide-react'; // Removed Search icon
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+// Removed Input and FormEvent as search is moved
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { NAV_LINKS } from '@/lib/constants';
 import { cn } from '@/lib/utils';
@@ -14,18 +14,10 @@ import Logo from './Logo';
 
 export default function MobileNav() {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  // Removed searchQuery state and router as search is moved
   const pathname = usePathname();
-  const router = useRouter();
 
-  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-      setSearchQuery('');
-      setIsOpen(false); // Close sheet after search
-    }
-  };
+  // Removed handleSearchSubmit function
 
   return (
     <div className="md:hidden">
@@ -48,23 +40,10 @@ export default function MobileNav() {
               </SheetClose>
             </div>
 
-            <div className="p-6 border-b border-border">
-              <form onSubmit={handleSearchSubmit} className="flex items-center">
-                <Input
-                  type="search"
-                  placeholder="Search products..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="rounded-r-none focus:ring-0 focus:ring-offset-0 border-r-0 text-sm"
-                />
-                <Button type="submit" variant="outline" size="icon" className="rounded-l-none border-l-0 h-10 w-10">
-                  <Search className="h-4 w-4" />
-                  <span className="sr-only">Search</span>
-                </Button>
-              </form>
-            </div>
+            {/* Removed search form from mobile nav */}
+            {/* <div className="p-6 border-b border-border"> ... </div> */}
 
-            <nav className="flex flex-col space-y-1 p-6">
+            <nav className="flex flex-col space-y-1 p-6 mt-4"> {/* Added mt-4 for spacing */}
               {NAV_LINKS.map((link) => (
                 <SheetClose asChild key={link.href}>
                   <Link
