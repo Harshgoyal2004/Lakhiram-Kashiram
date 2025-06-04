@@ -5,20 +5,15 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import type { Product } from '@/lib/types';
 import ProductList from '@/components/products/ProductList';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-// Metadata cannot be generated in Client Components. It should be handled in a parent Server Component or layout if dynamic.
-// import { SITE_NAME } from '@/lib/constants';
+import { Button } from '@/components/ui/button';
 import { getProducts } from '@/lib/products';
-import { Loader2 } from 'lucide-react';
-
-const ALL_CATEGORIES_VALUE = "__all__"; // Sentinel value for "All Categories"
+import { Loader2, ArrowDownAZ, ArrowUpAZ } from 'lucide-react';
 
 export default function ProductsPage() {
   const [initialProducts, setInitialProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [categories, setCategories] = useState<string[]>([]);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc'); // 'asc' for A-Z, 'desc' for Z-A
 
   const [searchSuggestions, setSearchSuggestions] = useState<Product[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -31,15 +26,8 @@ export default function ProductsPage() {
       try {
         const products = await getProducts();
         setInitialProducts(products);
-        if (products.length > 0) {
-          const uniqueCategories = Array.from(
-            new Set(products.map(p => p.category).filter(Boolean) as string[])
-          ).sort();
-          setCategories(uniqueCategories);
-        }
       } catch (error) {
         console.error("Failed to fetch products:", error);
-        // Optionally, set an error state here to display to the user
       } finally {
         setIsLoading(false);
       }
@@ -64,8 +52,6 @@ export default function ProductsPage() {
 
   const handleSuggestionClick = (product: Product) => {
     setSearchQuery(product.name);
-    setSelectedCategory(''); // Reset category filter when a suggestion is clicked
-    // Any other filters (like price, dietary tags) should also be reset here if they exist
     setShowSuggestions(false);
     setSearchSuggestions([]);
   };
@@ -82,14 +68,26 @@ export default function ProductsPage() {
     };
   }, []);
 
-  const filteredProducts = useMemo(() => {
-    return initialProducts.filter(product => {
-      const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase()));
-      const matchesCategory = selectedCategory ? product.category === selectedCategory : true;
-      return matchesSearch && matchesCategory;
+  const toggleSortOrder = () => {
+    setSortOrder(prevOrder => (prevOrder === 'asc' ? 'desc' : 'asc'));
+  };
+
+  const filteredAndSortedProducts = useMemo(() => {
+    let products = initialProducts.filter(product => {
+      return product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+             (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase()));
     });
-  }, [initialProducts, searchQuery, selectedCategory]);
+
+    products.sort((a, b) => {
+      if (sortOrder === 'asc') {
+        return a.name.localeCompare(b.name);
+      } else {
+        return b.name.localeCompare(a.name);
+      }
+    });
+
+    return products;
+  }, [initialProducts, searchQuery, sortOrder]);
 
 
   if (isLoading) {
@@ -117,7 +115,7 @@ export default function ProductsPage() {
             placeholder="Search products by name..."
             value={searchQuery}
             onChange={handleSearchChange}
-            onFocus={() => searchQuery.length > 0 && setSearchSuggestions(initialProducts.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase())).slice(0,5))} // Show suggestions on focus if query exists
+            onFocus={() => searchQuery.length > 0 && setSearchSuggestions(initialProducts.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase())).slice(0,5))}
             className="text-base"
           />
           {showSuggestions && searchSuggestions.length > 0 && (
@@ -134,32 +132,14 @@ export default function ProductsPage() {
             </div>
           )}
         </div>
-        <Select
-          value={selectedCategory}
-          onValueChange={(value) => {
-            if (value === ALL_CATEGORIES_VALUE) {
-              setSelectedCategory('');
-            } else {
-              setSelectedCategory(value);
-            }
-          }}
-        >
-          <SelectTrigger className="max-w-sm w-full text-base">
-            <SelectValue placeholder="Filter by Category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL_CATEGORIES_VALUE}>All Categories</SelectItem>
-            {categories.map(category => (
-              <SelectItem key={category} value={category}>
-                {category}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Button onClick={toggleSortOrder} variant="outline" className="max-w-sm w-full text-base">
+          Sort by Name 
+          {sortOrder === 'asc' ? <ArrowDownAZ className="ml-2 h-5 w-5" /> : <ArrowUpAZ className="ml-2 h-5 w-5" />}
+        </Button>
       </div>
       
-      {filteredProducts.length > 0 ? (
-        <ProductList products={filteredProducts} />
+      {filteredAndSortedProducts.length > 0 ? (
+        <ProductList products={filteredAndSortedProducts} />
       ) : (
         <div className="text-center py-10">
           <p className="text-2xl text-muted-foreground">
