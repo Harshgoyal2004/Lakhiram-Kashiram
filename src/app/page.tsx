@@ -10,7 +10,8 @@ const industries = [
   { name: 'Restaurants', icon: UtensilsCrossed, description: "Flavorful solutions for culinary excellence." },
   { name: 'Pharmaceuticals', icon: FlaskConical, description: "High-purity components for health and wellness." },
   { name: 'Cosmetic Industries', icon: Sparkles, description: "Natural ingredients for beauty and personal care." },
-  { name: 'Tobacco Industries', icon: Leaf, description: "Quality additives and flavorings." },
+  { name: 'Tobacco Industries', icon: Factory, description: "Quality additives and flavorings." },
+  { name: 'Ayurvedic Industries', icon: Leaf, description: "Traditional formulations and pure ingredients." },
 ];
 
 export default function HomePage() {
@@ -92,7 +93,7 @@ export default function HomePage() {
               Delivering excellence and quality ingredients across diverse sectors.
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {industries.map((industry) => (
               <Card key={industry.name} className="shadow-lg hover:shadow-xl transition-shadow text-center">
                 <CardHeader className="flex flex-col items-center">
