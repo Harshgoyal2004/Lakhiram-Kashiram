@@ -21,7 +21,7 @@ export default function ProductsCategoriesPage() {
             <Card className="flex flex-col h-full overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg cursor-pointer group">
               <div className="relative aspect-[16/9] w-full">
                 <Image
-                  src={`https://placehold.co/800x450.png?text=${encodeURIComponent(category.name)}`}
+                  src={category.imageUrl || `https://placehold.co/800x450.png?text=${encodeURIComponent(category.name)}`}
                   alt={category.name}
                   fill
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
