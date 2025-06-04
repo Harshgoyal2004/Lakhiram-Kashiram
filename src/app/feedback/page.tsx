@@ -93,7 +93,9 @@ export default function FeedbackPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || result.details || `Failed to submit feedback. Status: ${response.status}`);
+        // Prioritize result.details for a more specific error message if available
+        const errorMessage = result.details || result.error || `Failed to submit feedback. Status: ${response.status}`;
+        throw new Error(errorMessage);
       }
 
       toast({
