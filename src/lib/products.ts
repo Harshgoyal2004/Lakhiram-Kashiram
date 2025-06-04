@@ -97,15 +97,27 @@ const extractSolubleOilProductNames: string[] = [
   "Indrayain", "Jaiphal", "Jamun", "Jata manshi", "Jojoba", "Kali mirchi", "Kamal", "Kapoor",
   "Kapur Kachri", "Karanj beej", "Khal muriya", "Khus", "Kuchla", "Lagwanti", "Lauki", "Lehsun",
   "Lemon", "Lemon grass", "Lodhra", "Lotus", "Loung", "Malkhagni", "Manjishtha", "Mehndi",
-  "Mentha", "Meshwak (Pilu)", "Mehti", "Mogra", "Mulethi", "Nagarmotha", "Neelgiri", "Nirgundi",
-  "Noni", "Olive oil", "Orange", "Palas papra", "Rtanjot", "Rose hip", "Rose marry", "Saffron",
-  "Salai guggal", "Sank puspi", "Satawari", "Saunf", "Seabuckthorn", "Sena", "Shalparni",
-  "Shikakai", "Sonth", "Spearmint", "Tea tree", "Trikatu", "Triphala", "True Indigo", "Tulsi",
-  "Turmeric", "Vativer"
+  "Mentha", "Meshwak (Pilu)", "Mehti", "Mogra", "Mulethi", "Nagarmotha", "Neelgiri",
+  "Nirgundi", "Noni", "Olive oil", "Orange", "Palas papra", "Rtanjot", "Rose hip", "Rose marry",
+  "Saffron", "Salai guggal", "Sank puspi", "Satawari", "Saunf", "Seabuckthorn", "Sena",
+  "Shalparni", "Shikakai", "Sonth", "Spearmint", "Tea tree", "Trikatu", "Triphala",
+  "True Indigo", "Tulsi", "Turmeric", "Vativer"
 ];
 
 // Predefined list of product names for the "PG | Water Extract" category
 const pgWaterExtractProductNames: string[] = [
+  "Akarkara", "Almond", "Aloe vera", "Amla", "Ananas", "Anantmool", "Anar", "Anjeer", "Apple", "Arjuna", "Arnica", "Ashwagandha", "Avocado",
+  "Babchi", "Baboona", "Baheda", "Banana", "Beal fruit", "Bhringraj", "Bhui amla", "Black berry", "Blue berry", "Brahmi", "Chameli", "Chironji", "Coffea",
+  "Dalchini", "Dandelion", "Daru haldi", "Dhai phool", "Dudhi", "Gajar", "Gendha", "Giloy", "Ginseng", "Grapes", "Green tea", "Harad", "Honey", "Imli",
+  "Jaiphal", "Jamun", "Jatamansi", "Kalmegh", "Kali mirch", "Kapur", "Kansi", "Kelp Sea", "Kesar", "Kheera", "Khus", "Kiwi",
+  "Lemon", "Lehsun", "Lodhra", "Lotus", "Manjistha", "Marshmello", "Methi", "Mehndi", "Mentha", "Mix fruit", "Mogra", "Mulethi", "Mulberry", "Mushroom",
+  "Nagarmotha", "Nariyal", "Neel giri", "Neem", "Neem tulsi", "Nirgundi", "Oats", "Olive", "Onion", "Orange", "Papita", "Peach",
+  "Punarnava", "Reetha", "Rose", "Rosemary", "Sandal", "Saw Palmtto", "Senna", "Shank puspi", "Shikakai", "Sounf", "Satavari", "Strawberry", "Sunflower",
+  "Sunthi", "Supari", "Tea tree", "Thyme", "Tulsi", "Turmeric", "Vacha", "Vaividang", "Vanchlochan", "Vashak", "Vidarikand", "Wheat", "Witch Hazel"
+];
+
+// Predefined list of product names for the "Ayurvedic Oil" category
+const ayurvedicOilProductNames: string[] = [
   "Akarkara", "Almond", "Aloe vera", "Amla", "Ananas", "Anantmool", "Anar", "Anjeer", "Apple", "Arjuna", "Arnica", "Ashwagandha", "Avocado",
   "Babchi", "Baboona", "Baheda", "Banana", "Beal fruit", "Bhringraj", "Bhui amla", "Black berry", "Blue berry", "Brahmi", "Chameli", "Chironji", "Coffea",
   "Dalchini", "Dandelion", "Daru haldi", "Dhai phool", "Dudhi", "Gajar", "Gendha", "Giloy", "Ginseng", "Grapes", "Green tea", "Harad", "Honey", "Imli",
@@ -121,12 +133,11 @@ const pgWaterExtractProductNames: string[] = [
 function generatePlaceholderProducts(productNames: string[], category: string): Product[] {
   return productNames.map((name, index) => {
     const nameParts = name.split(' ');
-    let hint = nameParts[0].toLowerCase(); // Default to first word
-    if (nameParts.length > 1 && !nameParts[1].startsWith('(')) { // If second word exists and is not in parens
+    let hint = nameParts[0].toLowerCase(); 
+    if (nameParts.length > 1 && !nameParts[1].startsWith('(')) { 
       hint = nameParts.slice(0, 2).join(' ').toLowerCase();
     }
     
-    // Specific hint adjustments if needed based on category or name
     if (category === "Essential | Spice Oil" || category === "Range of Carrier Oil") {
        if (name.toLowerCase().includes("oil")) {
          hint = name.toLowerCase().replace("oil", "").trim().split(" ").slice(0,2).join(" ");
@@ -138,14 +149,20 @@ function generatePlaceholderProducts(productNames: string[], category: string): 
         if (name.includes("(")) { 
             hint = name.substring(0, name.indexOf("(")).trim().toLowerCase();
         }
-         // append extract if not already implied
         if (!hint.includes("extract")) {
              hint += " extract";
+        }
+    } else if (category === "Ayurvedic Oil") {
+        hint = nameParts[0].toLowerCase();
+        if (name.includes("(")) {
+            hint = name.substring(0, name.indexOf("(")).trim().toLowerCase();
+        }
+        if (!hint.includes("ayurvedic") && !hint.includes("oil")) {
+             hint += " ayurvedic";
         }
     }
 
 
-    // Refine hint for known patterns
     if (name.toLowerCase().includes("calendula oil (pure)")) hint = "calendula flower";
     if (name.toLowerCase().includes("curry leaf oil (pure)")) hint = "curry leaf";
     if (name.toLowerCase().includes("curry leaf oil (rco)")) hint = "curry leaf";
@@ -155,19 +172,19 @@ function generatePlaceholderProducts(productNames: string[], category: string): 
 
 
     return {
-      id: `${toSlug(name)}-${index}`, // Append index to ensure unique ID for similar names
+      id: `${toSlug(category)}-${toSlug(name)}-${index}`, 
       name: name,
       description: `High-quality ${name}. Sourced for purity and effectiveness.`,
-      longDescription: `Detailed information about ${name}, its benefits, and common uses will be available here. This ${category.toLowerCase().includes('extract') ? 'extract' : 'oil'} is valued for its unique properties and applications in various traditional and modern practices.`,
-      imageUrl: `https://placehold.co/600x400.png`, // Generic placeholder
+      longDescription: `Detailed information about ${name}, its benefits, and common uses will be available here. This ${category.toLowerCase().includes('extract') ? 'extract' : (category.toLowerCase().includes('ayurvedic') ? 'ayurvedic product' : 'oil')} is valued for its unique properties and applications in various traditional and modern practices.`,
+      imageUrl: `https://placehold.co/600x400.png`, 
       dataAiHint: hint.trim(),
       category: category,
-      characteristics: ["Natural", "High Quality"], // Generic characteristics
+      characteristics: ["Natural", "High Quality"], 
       usageTips: `Ideal for various applications depending on the product type. Always consult guidelines for proper use. For ${name}, typical uses include...`,
       origin: "Sourced from the finest available natural ingredients.",
-      packagingOptions: [{ size: "100ml/g" }, { size: "250ml/g" }, { size: "500ml/g" }, {size: "1L/kg"}], // Generic packaging
+      packagingOptions: [{ size: "100ml/g" }, { size: "250ml/g" }, { size: "500ml/g" }, {size: "1L/kg"}], 
       isFeatured: false,
-      attributes: [{ key: "Type", value: category }, {key: "Form", value: category.toLowerCase().includes('extract') ? 'Extract' : 'Oil'}],
+      attributes: [{ key: "Type", value: category }, {key: "Form", value: category.toLowerCase().includes('extract') ? 'Extract' : (category.toLowerCase().includes('ayurvedic') ? 'Ayurvedic Product' : 'Oil')}],
     };
   });
 }
@@ -176,6 +193,7 @@ const essentialSpiceOilPlaceholders = generatePlaceholderProducts(essentialSpice
 const rangeOfCarrierOilPlaceholders = generatePlaceholderProducts(rangeOfCarrierOilProductNames, "Range of Carrier Oil");
 const extractSolubleOilPlaceholders = generatePlaceholderProducts(extractSolubleOilProductNames, "Extract | Soluble Oil");
 const pgWaterExtractPlaceholders = generatePlaceholderProducts(pgWaterExtractProductNames, "PG | Water Extract");
+const ayurvedicOilPlaceholders = generatePlaceholderProducts(ayurvedicOilProductNames, "Ayurvedic Oil");
 
 
 export async function getProducts(): Promise<Product[]> {
@@ -183,8 +201,6 @@ export async function getProducts(): Promise<Product[]> {
     const productsCollection = collection(db, 'products');
     const querySnapshot = await getDocs(productsCollection);
     const products = querySnapshot.docs.map(docToProduct);
-    // Combine with hardcoded products if necessary for a full list, or handle separately
-    // For now, this only returns Firestore products. The category pages handle hardcoded lists.
     return products;
   } catch (error) {
     console.error("Error fetching products:", error);
@@ -193,19 +209,18 @@ export async function getProducts(): Promise<Product[]> {
 }
 
 export async function getProductById(id: string): Promise<Product | null> {
-  // Check hardcoded lists first
   const allHardcodedProducts = [
       ...essentialSpiceOilPlaceholders,
       ...rangeOfCarrierOilPlaceholders,
       ...extractSolubleOilPlaceholders,
-      ...pgWaterExtractPlaceholders
+      ...pgWaterExtractPlaceholders,
+      ...ayurvedicOilPlaceholders
   ];
   const hardcodedProduct = allHardcodedProducts.find(p => p.id === id);
   if (hardcodedProduct) {
     return hardcodedProduct;
   }
 
-  // If not found in hardcoded lists, try fetching from Firestore
   try {
     const productDocRef = doc(db, 'products', id);
     const productDoc = await getDoc(productDocRef);
@@ -224,8 +239,6 @@ export async function getProductById(id: string): Promise<Product | null> {
 
 export async function getFeaturedProducts(count: number = 3): Promise<Product[]> {
   try {
-    // Note: This currently only fetches from Firestore. If featured products could be hardcoded,
-    // this logic would need to be expanded.
     const productsCollection = collection(db, 'products');
     const q = query(productsCollection, where("isFeatured", "==", true), limit(count));
     const querySnapshot = await getDocs(q);
@@ -250,8 +263,10 @@ export async function getProductsByCategoryName(categoryName: string): Promise<P
   if (categoryName === "PG | Water Extract") {
     return pgWaterExtractPlaceholders;
   }
+  if (categoryName === "Ayurvedic Oil") {
+    return ayurvedicOilPlaceholders;
+  }
 
-  // For other categories, fetch from Firestore
   try {
     const productsCollection = collection(db, 'products');
     const q = query(productsCollection, where("category", "==", categoryName));
