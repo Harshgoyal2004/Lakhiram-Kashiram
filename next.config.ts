@@ -28,6 +28,12 @@ const nextConfig: NextConfig = {
         hostname: 'media.istockphoto.com', // Added for iStockphoto
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'static.vecteezy.com', // Added for Vecteezy
+        port: '',
+        pathname: '/**',
       }
     ],
   },
