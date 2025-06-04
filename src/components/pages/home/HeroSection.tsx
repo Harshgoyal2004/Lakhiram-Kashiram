@@ -7,16 +7,7 @@ import { SITE_NAME, COMPANY_TAGLINE, COMPANY_FOUNDING_YEAR } from '@/lib/constan
 export default function HeroSection() {
   return (
     <section className="relative bg-gradient-to-r from-brand-antique-white via-amber-50 to-brand-antique-white py-20 md:py-32 rounded-lg shadow-xl overflow-hidden">
-      <div className="absolute inset-0 opacity-20">
-        <Image 
-          src="https://placehold.co/1920x1080.png"
-          alt="Abstract background representing company values or industry"
-          layout="fill"
-          objectFit="cover"
-          quality={75}
-          data-ai-hint="corporate office building"
-        />
-      </div>
+      {/* The div containing the background image has been removed */}
       <div className="container mx-auto px-4 relative z-10 text-center">
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-serif font-bold text-brand-sienna mb-6 leading-tight">
           {SITE_NAME}
