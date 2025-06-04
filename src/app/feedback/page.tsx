@@ -30,6 +30,22 @@ const staticTestimonials: StaticTestimonial[] = [
     rating: 5,
     date: 'June 2024',
   },
+  {
+    id: 'testimonial-priya-sharma',
+    name: 'Priya Sharma',
+    location: 'Delhi',
+    testimonial: `The team at ${SITE_NAME} is knowledgeable and always helpful. Their commitment to quality is evident in every product.`,
+    rating: 5,
+    date: 'May 2024',
+  },
+  {
+    id: 'testimonial-amit-kumar',
+    name: 'Amit Kumar',
+    location: 'Delhi',
+    testimonial: `I've been sourcing ingredients from ${SITE_NAME} for years for my business. Consistent quality and reliable delivery.`,
+    rating: 5,
+    date: 'April 2024',
+  },
 ];
 
 export default function FeedbackPage() {
@@ -118,7 +134,7 @@ export default function FeedbackPage() {
 
       <section className="mb-16">
         <h2 className="text-3xl font-serif font-semibold text-brand-sienna mb-10 text-center">What Our Customers Say</h2>
-        <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-8"> {/* Changed to lg:grid-cols-2 since we have 2 testimonials */}
+        <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-8">
           {staticTestimonials.map((testimonial) => (
             <Card key={testimonial.id} className="bg-card shadow-lg flex flex-col">
               <CardHeader>
