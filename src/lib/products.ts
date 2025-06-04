@@ -86,41 +86,78 @@ const rangeOfCarrierOilProductNames: string[] = [
     "Seabuckthorn berry oil", "Sesame oil", "Soybean oil", "Sunflower oil", "Walnut oil", "Wheatgerm oil"
 ];
 
+// Predefined list of product names for the "Extract | Soluble Oil" category
+const extractSolubleOilProductNames: string[] = [
+  "Ajmoda", "Ajwain", "Akarkara", "Akhrot", "Almond", "Amar bel", "Amla", "Anar (Dadam chhal)",
+  "Angeer", "Anise", "Arand", "Arnica", "Ashwagandha", "Avocado", "Babchi", "Babul chhal",
+  "Babuna", "Bael fruit", "Bahada", "Bargat", "Bichchhu buti", "Brahmi", "Chameli", "Chandan",
+  "Chirongi", "Coleus", "Dalchini", "Dasmool", "Datura", "Devdar", "Dhai phool", "Dill seed",
+  "Durva", "Elachi", "Gajar", "Gambhari", "Gandhpurna", "Ghrit Kumari (Aloe Vera)", "Giloy",
+  "Ginko", "Golden ROD", "Grapes", "Gulab", "Gunja", "Harad", "Hazel nut", "Horse Tail",
+  "Indrayain", "Jaiphal", "Jamun", "Jata manshi", "Jojoba", "Kali mirchi", "Kamal", "Kapoor",
+  "Kapur Kachri", "Karanj beej", "Khal muriya", "Khus", "Kuchla", "Lagwanti", "Lauki", "Lehsun",
+  "Lemon", "Lemon grass", "Lodhra", "Lotus", "Loung", "Malkhagni", "Manjishtha", "Mehndi",
+  "Mentha", "Meshwak (Pilu)", "Mehti", "Mogra", "Mulethi", "Nagarmotha", "Neelgiri", "Nirgundi",
+  "Noni", "Olive oil", "Orange", "Palas papra", "Rtanjot", "Rose hip", "Rose marry", "Saffron",
+  "Salai guggal", "Sank puspi", "Satawari", "Saunf", "Seabuckthorn", "Sena", "Shalparni",
+  "Shikakai", "Sonth", "Spearmint", "Tea tree", "Trikatu", "Triphala", "True Indigo", "Tulsi",
+  "Turmeric", "Vativer"
+];
+
 
 // Function to generate placeholder product data
 function generatePlaceholderProducts(productNames: string[], category: string): Product[] {
   return productNames.map((name, index) => {
     const nameParts = name.split(' ');
-    let hint = nameParts.slice(0, 2).join(' ').toLowerCase();
-    if (nameParts.length === 1) hint = nameParts[0].toLowerCase();
-    // Specific hint adjustments if needed
-    if (name.toLowerCase().includes("calendula oil (pure)")) hint = "calendula oil";
+    let hint = nameParts[0].toLowerCase(); // Default to first word
+    if (nameParts.length > 1 && !nameParts[1].startsWith('(')) { // If second word exists and is not in parens
+      hint = nameParts.slice(0, 2).join(' ').toLowerCase();
+    }
+    // Specific hint adjustments if needed based on category or name
+    if (category === "Essential | Spice Oil" || category === "Range of Carrier Oil") {
+       if (name.toLowerCase().includes("oil")) {
+         hint = name.toLowerCase().replace("oil", "").trim().split(" ").slice(0,2).join(" ");
+       } else {
+         hint = name.toLowerCase().split(" ").slice(0,2).join(" ");
+       }
+    } else if (category === "Extract | Soluble Oil") {
+        hint = nameParts[0].toLowerCase(); // For extracts, often the primary plant name is key
+        if (name.includes("(")) { // Handle names like "Anar (Dadam chhal)"
+            hint = name.substring(0, name.indexOf("(")).trim().toLowerCase();
+        }
+    }
+
+
+    // Refine hint for known patterns
+    if (name.toLowerCase().includes("calendula oil (pure)")) hint = "calendula flower";
     if (name.toLowerCase().includes("curry leaf oil (pure)")) hint = "curry leaf";
     if (name.toLowerCase().includes("curry leaf oil (rco)")) hint = "curry leaf";
-    if (name.toLowerCase().includes("garlic oil (pure)")) hint = "garlic oil";
-    if (name.toLowerCase().includes("niroli oil pure")) hint = "neroli oil";
+    if (name.toLowerCase().includes("garlic oil (pure)")) hint = "garlic bulb";
+    if (name.toLowerCase().includes("niroli oil pure")) hint = "neroli flower";
+    if (name.toLowerCase() === "ghrit kumari (aloe vera)") hint = "aloe vera";
 
 
     return {
       id: `${toSlug(name)}-${index}`, // Append index to ensure unique ID for similar names
       name: name,
       description: `High-quality ${name}. Sourced for purity and effectiveness.`,
-      longDescription: `Detailed information about ${name}, its benefits, and common uses will be available here. This oil is valued for its unique properties and applications in various traditional and modern practices.`,
+      longDescription: `Detailed information about ${name}, its benefits, and common uses will be available here. This ${category.toLowerCase().includes('extract') ? 'extract' : 'oil'} is valued for its unique properties and applications in various traditional and modern practices.`,
       imageUrl: `https://placehold.co/600x400.png`, // Generic placeholder
       dataAiHint: hint,
       category: category,
       characteristics: ["Natural", "High Quality"], // Generic characteristics
-      usageTips: `Ideal for various applications depending on the oil type. Always consult guidelines for proper use. For ${name}, typical uses include...`,
+      usageTips: `Ideal for various applications depending on the product type. Always consult guidelines for proper use. For ${name}, typical uses include...`,
       origin: "Sourced from the finest available natural ingredients.",
-      packagingOptions: [{ size: "100ml" }, { size: "250ml" }, { size: "500ml" }, {size: "1L"}], // Generic packaging
+      packagingOptions: [{ size: "100ml/g" }, { size: "250ml/g" }, { size: "500ml/g" }, {size: "1L/kg"}], // Generic packaging
       isFeatured: false,
-      attributes: [{ key: "Type", value: category }, {key: "Form", value: "Oil"}],
+      attributes: [{ key: "Type", value: category }, {key: "Form", value: category.toLowerCase().includes('extract') ? 'Extract' : 'Oil'}],
     };
   });
 }
 
 const essentialSpiceOilPlaceholders = generatePlaceholderProducts(essentialSpiceOilProductNames, "Essential | Spice Oil");
 const rangeOfCarrierOilPlaceholders = generatePlaceholderProducts(rangeOfCarrierOilProductNames, "Range of Carrier Oil");
+const extractSolubleOilPlaceholders = generatePlaceholderProducts(extractSolubleOilProductNames, "Extract | Soluble Oil");
 
 
 export async function getProducts(): Promise<Product[]> {
@@ -129,6 +166,7 @@ export async function getProducts(): Promise<Product[]> {
     const querySnapshot = await getDocs(productsCollection);
     const products = querySnapshot.docs.map(docToProduct);
     // Combine with hardcoded products if necessary for a full list, or handle separately
+    // For now, this only returns Firestore products. The category pages handle hardcoded lists.
     return products;
   } catch (error) {
     console.error("Error fetching products:", error);
@@ -138,13 +176,14 @@ export async function getProducts(): Promise<Product[]> {
 
 export async function getProductById(id: string): Promise<Product | null> {
   // Check hardcoded lists first
-  const essentialOilProduct = essentialSpiceOilPlaceholders.find(p => p.id === id);
-  if (essentialOilProduct) {
-    return essentialOilProduct;
-  }
-  const carrierOilProduct = rangeOfCarrierOilPlaceholders.find(p => p.id === id);
-  if (carrierOilProduct) {
-    return carrierOilProduct;
+  const allHardcodedProducts = [
+      ...essentialSpiceOilPlaceholders,
+      ...rangeOfCarrierOilPlaceholders,
+      ...extractSolubleOilPlaceholders
+  ];
+  const hardcodedProduct = allHardcodedProducts.find(p => p.id === id);
+  if (hardcodedProduct) {
+    return hardcodedProduct;
   }
 
   // If not found in hardcoded lists, try fetching from Firestore
@@ -180,13 +219,14 @@ export async function getFeaturedProducts(count: number = 3): Promise<Product[]>
 }
 
 export async function getProductsByCategoryName(categoryName: string): Promise<Product[]> {
-  // Check if the category is "Essential | Spice Oil"
   if (categoryName === "Essential | Spice Oil") {
     return essentialSpiceOilPlaceholders;
   }
-  // Check if the category is "Range of Carrier Oil"
   if (categoryName === "Range of Carrier Oil") {
     return rangeOfCarrierOilPlaceholders;
+  }
+  if (categoryName === "Extract | Soluble Oil") {
+    return extractSolubleOilPlaceholders;
   }
 
   // For other categories, fetch from Firestore
@@ -205,3 +245,4 @@ export async function getProductsByCategoryName(categoryName: string): Promise<P
   }
 }
 
+    
