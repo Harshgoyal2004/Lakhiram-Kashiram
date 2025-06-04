@@ -32,6 +32,23 @@ export interface ContactFormPayload {
   message: string;
 }
 
+export interface FeedbackFormPayload {
+  name: string;
+  email?: string; // Optional
+  rating: number; // 1-5, required
+  message: string;
+}
+
+export interface StaticTestimonial {
+  id: string;
+  name: string;
+  location?: string;
+  testimonial: string;
+  rating: number; // 1-5
+  date?: string;
+}
+
+
 // Product interface for informational display
 export interface Product {
   id: string;
@@ -51,3 +68,4 @@ export interface Product {
 }
 
 // Removed CartItem, Order, Filters, SortOption types
+

@@ -4,6 +4,7 @@ export const NAV_LINKS = [
   { href: '/about', label: 'About Us' },
   { href: '/products', label: 'Products' },
   { href: '/contact', label: 'Contact Us' },
+  { href: '/feedback', label: 'Feedback & Reviews' },
 ];
 
 export const SITE_NAME = "Lakhi Ram Kashi Ram";
@@ -29,3 +30,4 @@ export interface ProductCategoryInfo {
   dataAiHint: string;
   imageUrl?: string;
 }
+
