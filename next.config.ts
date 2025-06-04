@@ -34,6 +34,12 @@ const nextConfig: NextConfig = {
         hostname: 'static.vecteezy.com', // Added for Vecteezy
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.pinimg.com', // Added for Pinterest images
+        port: '',
+        pathname: '/**',
       }
     ],
   },
