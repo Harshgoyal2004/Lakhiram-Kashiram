@@ -87,9 +87,7 @@ export default async function ProductDetailPage({ params }: Props) {
             className="object-cover"
             data-ai-hint={product.dataAiHint || "oil product detail"}
             priority // Prioritize loading main product image
-            onError={(e) => {
-              console.error(`[ProductDetailPage] Error loading image for product "${product.name}": ${imageUrl}`, e);
-            }}
+            // Removed onError handler
           />
         </div>
 
