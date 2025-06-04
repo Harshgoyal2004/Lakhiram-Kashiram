@@ -6,6 +6,7 @@
 import type { Product } from '@/lib/types';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, doc, getDoc, query, where, limit } from 'firebase/firestore';
+import { SITE_NAME } from '@/lib/constants'; // Added import for SITE_NAME
 
 // Helper function to convert Firestore document to Product type
 function docToProduct(documentSnapshot: any): Product {
@@ -131,12 +132,11 @@ const ayurvedicOilProductNames: string[] = [
 
 // Function to generate placeholder product data
 function generatePlaceholderProducts(productNames: string[], category: string): Product[] {
+  const categoryType = category.toLowerCase().includes('extract') ? 'extract' : (category.toLowerCase().includes('ayurvedic') ? 'ayurvedic product' : 'oil');
+  
   return productNames.map((name, index) => {
     const nameParts = name.split(' ');
     let hint = nameParts[0].toLowerCase(); 
-    if (nameParts.length > 1 && !nameParts[1].startsWith('(')) { 
-      hint = nameParts.slice(0, 2).join(' ').toLowerCase();
-    }
     
     if (category === "Essential | Spice Oil" || category === "Range of Carrier Oil") {
        if (name.toLowerCase().includes("oil")) {
@@ -149,7 +149,10 @@ function generatePlaceholderProducts(productNames: string[], category: string): 
         if (name.includes("(")) { 
             hint = name.substring(0, name.indexOf("(")).trim().toLowerCase();
         }
-        if (!hint.includes("extract")) {
+        // Ensure hint doesn't become just "extract" if nameParts[0] was short
+        if (hint === "extract" && nameParts.length > 1 && !nameParts[0].toLowerCase().includes("extract")) {
+            hint = nameParts[0].toLowerCase() + " extract";
+        } else if (!hint.includes("extract") && !nameParts[0].toLowerCase().includes("extract")) {
              hint += " extract";
         }
     } else if (category === "Ayurvedic Oil") {
@@ -157,7 +160,9 @@ function generatePlaceholderProducts(productNames: string[], category: string): 
         if (name.includes("(")) {
             hint = name.substring(0, name.indexOf("(")).trim().toLowerCase();
         }
-        if (!hint.includes("ayurvedic") && !hint.includes("oil")) {
+        if (hint === "ayurvedic" && nameParts.length > 1 && !nameParts[0].toLowerCase().includes("ayurvedic")) {
+             hint = nameParts[0].toLowerCase() + " ayurvedic";
+        } else if (!hint.includes("ayurvedic") && !nameParts[0].toLowerCase().includes("ayurvedic") && !name.toLowerCase().includes("oil")) {
              hint += " ayurvedic";
         }
     }
@@ -170,12 +175,27 @@ function generatePlaceholderProducts(productNames: string[], category: string): 
     if (name.toLowerCase().includes("niroli oil pure")) hint = "neroli flower";
     if (name.toLowerCase() === "ghrit kumari (aloe vera)") hint = "aloe vera";
 
+    const longDescription = `Discover the unique qualities of ${name}, a premium ${categoryType}.
+
+**Key Benefits & Features:**
+*   [Describe unique selling points, e.g., extraction method, purity, traditional benefits for ${name}]
+*   [Mention key active compounds or natural properties of ${name} if applicable]
+
+**Common Uses:**
+*   [List primary applications for ${name}, e.g., culinary, aromatherapy, skincare, medicinal]
+*   [Suggest specific ways to use ${name} if appropriate]
+
+**Source & Quality:**
+*   [Briefly mention origin or sourcing of ${name} if notable, e.g., "Sourced from pristine Himalayan valleys"]
+*   Our ${name} is processed with utmost care to preserve its natural integrity and potency.
+
+At ${SITE_NAME}, we are dedicated to providing you with the finest ${categoryType}s, ensuring authenticity and excellence. For specific advice or applications, especially for therapeutic uses, consulting with a qualified practitioner is recommended.`;
 
     return {
       id: `${toSlug(category)}-${toSlug(name)}-${index}`, 
       name: name,
       description: `High-quality ${name}. Sourced for purity and effectiveness.`,
-      longDescription: `Detailed information about ${name}, its benefits, and common uses will be available here. This ${category.toLowerCase().includes('extract') ? 'extract' : (category.toLowerCase().includes('ayurvedic') ? 'ayurvedic product' : 'oil')} is valued for its unique properties and applications in various traditional and modern practices.`,
+      longDescription: longDescription,
       imageUrl: `https://placehold.co/600x400.png`, 
       dataAiHint: hint.trim(),
       category: category,
@@ -184,7 +204,7 @@ function generatePlaceholderProducts(productNames: string[], category: string): 
       origin: "Sourced from the finest available natural ingredients.",
       packagingOptions: [{ size: "100ml/g" }, { size: "250ml/g" }, { size: "500ml/g" }, {size: "1L/kg"}], 
       isFeatured: false,
-      attributes: [{ key: "Type", value: category }, {key: "Form", value: category.toLowerCase().includes('extract') ? 'Extract' : (category.toLowerCase().includes('ayurvedic') ? 'Ayurvedic Product' : 'Oil')}],
+      attributes: [{ key: "Type", value: category }, {key: "Form", value: categoryType }],
     };
   });
 }
@@ -201,10 +221,33 @@ export async function getProducts(): Promise<Product[]> {
     const productsCollection = collection(db, 'products');
     const querySnapshot = await getDocs(productsCollection);
     const products = querySnapshot.docs.map(docToProduct);
-    return products;
+    
+    // Combine with hardcoded products, ensuring Firestore data takes precedence if IDs match (though unlikely with current ID generation)
+    const allHardcoded = [
+        ...essentialSpiceOilPlaceholders,
+        ...rangeOfCarrierOilPlaceholders,
+        ...extractSolubleOilPlaceholders,
+        ...pgWaterExtractPlaceholders,
+        ...ayurvedicOilPlaceholders
+    ];
+    const combined = [...products];
+    allHardcoded.forEach(hp => {
+        if (!products.find(p => p.id === hp.id)) {
+            combined.push(hp);
+        }
+    });
+    return combined;
+
   } catch (error) {
     console.error("Error fetching products:", error);
-    return [];
+    // Fallback to hardcoded if Firestore fails, or decide on error handling
+    return [
+        ...essentialSpiceOilPlaceholders,
+        ...rangeOfCarrierOilPlaceholders,
+        ...extractSolubleOilPlaceholders,
+        ...pgWaterExtractPlaceholders,
+        ...ayurvedicOilPlaceholders
+    ];
   }
 }
 
@@ -228,11 +271,11 @@ export async function getProductById(id: string): Promise<Product | null> {
     if (productDoc.exists()) {
       return docToProduct(productDoc);
     } else {
-      console.log("No such product document in Firestore!");
-      return null;
+      console.log(`No such product document in Firestore for ID: ${id}! Checking hardcoded list again (should have been caught).`);
+      return null; // Already checked hardcoded, so if not in FS, it's not found.
     }
   } catch (error) {
-    console.error("Error fetching product by ID:", error);
+    console.error("Error fetching product by ID:", id, error);
     return null;
   }
 }
@@ -246,7 +289,13 @@ export async function getFeaturedProducts(count: number = 3): Promise<Product[]>
     return products;
   } catch (error) {
     console.error("Error fetching featured products:", error);
-    return [];
+    // Potentially return some featured products from hardcoded data if needed as fallback
+    const featuredHardcoded = [
+        ...essentialSpiceOilPlaceholders,
+        ...rangeOfCarrierOilPlaceholders,
+        // ... add other categories if they can be featured
+    ].filter(p => p.isFeatured).slice(0, count);
+    return featuredHardcoded;
   }
 }
 
@@ -267,6 +316,7 @@ export async function getProductsByCategoryName(categoryName: string): Promise<P
     return ayurvedicOilPlaceholders;
   }
 
+  // Fallback to Firestore for any other category name not hardcoded
   try {
     const productsCollection = collection(db, 'products');
     const q = query(productsCollection, where("category", "==", categoryName));
@@ -278,7 +328,9 @@ export async function getProductsByCategoryName(categoryName: string): Promise<P
     return products;
   } catch (error) {
     console.error(`Error fetching products for category "${categoryName}":`, error);
-    return [];
+    return []; // Return empty array on error for Firestore fetch
   }
 }
+    
+
     
