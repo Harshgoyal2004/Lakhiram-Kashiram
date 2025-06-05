@@ -31,6 +31,7 @@ export default function Footer() {
               <li><Link href="/products" className="hover:text-brand-gold transition-colors">Products</Link></li>
               <li><Link href="/about" className="hover:text-brand-gold transition-colors">About Us</Link></li>
               <li><Link href="/contact" className="hover:text-brand-gold transition-colors">Contact Us</Link></li>
+              <li><Link href="/feedback" className="hover:text-brand-gold transition-colors">Feedback & Reviews</Link></li>
             </ul>
           </div>
           {/* Connect with us column has been removed. */}
@@ -38,9 +39,9 @@ export default function Footer() {
         <div className="mt-12 border-t border-border/40 pt-8 text-center text-xs">
           <p>© {currentYear} {SITE_NAME}. All rights reserved.</p>
           <p>Designed with heritage, crafted for today.</p>
-          <div className="mt-4 space-y-1 md:space-y-0 md:space-x-4">
-            <p className="inline-block md:mr-4">GSTIN: {GST_NUMBER}</p>
-            <p className="inline-block">FSSAI Lic. No.: {FSSAI_NUMBER}</p>
+          <div className="mt-4">
+            <p>GSTIN: {GST_NUMBER}</p>
+            <p className="mt-1">FSSAI: {FSSAI_NUMBER}</p>
           </div>
         </div>
       </div>
