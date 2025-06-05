@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import { Playfair_Display, Lora } from 'next/font/google';
 import './globals.css';
@@ -18,10 +19,17 @@ const lora = Lora({
   display: 'swap',
 });
 
+const faviconUrl = "https://77xomcqrisqpataq.public.blob.vercel-storage.com/logo-KDzDyQ9FDY5Dcvc3LqNOeAw4bYlbOF.png";
+
 export const metadata: Metadata = {
   title: 'Lakhi Ram Kashi Ram Oils - A Legacy of Purity',
   description: 'Discover premium quality cooking oils from Lakhi Ram Kashi Ram, a trusted name for generations.',
   keywords: 'cooking oils, premium oils, Lakhi Ram Kashi Ram, edible oils, healthy oils',
+  icons: {
+    icon: faviconUrl,
+    shortcut: faviconUrl,
+    apple: faviconUrl,
+  },
 };
 
 export default function RootLayout({
